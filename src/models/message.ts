@@ -15,8 +15,8 @@ import { User } from '@models/user';
 })
 export class Message extends Model {
     @PrimaryKey
-    @Column(DataType.UUID)
     @Default(DataType.UUIDV4)
+    @Column(DataType.UUID)
     declare messageId: string;
 
     @Column
@@ -33,8 +33,8 @@ export class Message extends Model {
     @BelongsTo(() => User)
     declare recipient: User;
 
-    @Column(DataType.BOOLEAN)
     @Default(false)
+    @Column(DataType.BOOLEAN)
     declare isRead: boolean;
 
     @Column(DataType.STRING)

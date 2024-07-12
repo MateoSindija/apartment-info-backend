@@ -24,4 +24,5 @@ export const UpdateRestaurantDTO = z.object({
 
 export const ParamRestaurantUUID = z.object({
     restaurantId: z.string().uuid(),
+    apartmentId: z.string().uuid(),
 });

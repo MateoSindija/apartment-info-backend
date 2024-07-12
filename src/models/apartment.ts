@@ -10,7 +10,6 @@ import {
     Table,
 } from 'sequelize-typescript';
 import { User } from '@models/user';
-import { Organization } from '@models/organization';
 import { Reservation } from '@models/reservation';
 import { Scraping } from '@models/scraping';
 
@@ -29,12 +28,9 @@ export class Apartment extends Model {
     @Column(DataType.STRING(80))
     declare address: string;
 
+    @ForeignKey(() => User)
     @Column(DataType.UUID)
-    @ForeignKey(() => Organization)
-    declare organizationId: string;
-
-    @HasMany(() => User)
-    declare workers: User[];
+    declare ownerId: string;
 
     @HasMany(() => Reservation)
     declare reservations: Reservation[];
@@ -42,6 +38,6 @@ export class Apartment extends Model {
     @HasMany(() => Scraping)
     declare scrapingLinks: Scraping[];
 
-    @BelongsTo(() => Organization)
-    declare organization: Organization;
+    @BelongsTo(() => User)
+    declare owner: User;
 }

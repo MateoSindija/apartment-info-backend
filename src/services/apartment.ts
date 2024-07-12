@@ -7,6 +7,11 @@ import { Device } from '@models/device';
 import { Restaurant } from '@models/restaurant';
 import { Shop } from '@models/shop';
 import { Review } from '@models/review';
+import { ApartmentAttraction } from '@models/apartmentAttraction';
+import { BeachApartment } from '@models/apartmentBeach';
+import { ShopApartment } from '@models/apartmentShop';
+import { DeviceApartment } from '@models/apartmentDevice';
+import { RestaurantApartment } from '@models/apartmentRestaurant';
 
 @Service()
 export default class ApartmentService {
@@ -31,9 +36,17 @@ export default class ApartmentService {
         this.Logger.info('Getting all beaches in apartment!');
 
         const beaches = await Beach.findAll({
-            where: { apartmentId: apartmentId },
+            include: [
+                {
+                    model: BeachApartment,
+                    as: 'beachApartment',
+                    where: {
+                        apartmentId: apartmentId,
+                    },
+                    attributes: [], // Do not include ApartmentAttraction attributes in the result
+                },
+            ],
         });
-
         this.Logger.info('Found all beaches!');
         return beaches;
     }
@@ -41,7 +54,16 @@ export default class ApartmentService {
         this.Logger.info('Getting all shops in apartment!');
 
         const shops = await Shop.findAll({
-            where: { apartmentId: apartmentId },
+            include: [
+                {
+                    model: ShopApartment,
+                    as: 'shopApartment',
+                    where: {
+                        apartmentId: apartmentId,
+                    },
+                    attributes: [], // Do not include ApartmentAttraction attributes in the result
+                },
+            ],
         });
 
         this.Logger.info('Found all shops!');
@@ -53,7 +75,16 @@ export default class ApartmentService {
         this.Logger.info('Getting all devices in apartment!');
 
         const devices = await Device.findAll({
-            where: { apartmentId: apartmentId },
+            include: [
+                {
+                    model: DeviceApartment,
+                    as: 'deviceApartment',
+                    where: {
+                        apartmentId: apartmentId,
+                    },
+                    attributes: [], // Do not include ApartmentAttraction attributes in the result
+                },
+            ],
         });
 
         this.Logger.info('Found all devices!');
@@ -65,7 +96,16 @@ export default class ApartmentService {
         this.Logger.info('Getting all restaurants in apartment!');
 
         const restaurants = await Restaurant.findAll({
-            where: { apartmentId: apartmentId },
+            include: [
+                {
+                    model: RestaurantApartment,
+                    as: 'restaurantApartment',
+                    where: {
+                        apartmentId: apartmentId,
+                    },
+                    attributes: [], // Do not include ApartmentAttraction attributes in the result
+                },
+            ],
         });
 
         this.Logger.info('Found all restaurants!');

@@ -1,10 +1,10 @@
 import { Inject, Service } from 'typedi';
 import { LoggerType } from '@loaders/logger';
-import { Organization } from '@models/organization';
 import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
 import fs from 'fs';
 import { Device } from '@models/device';
+import { DeviceApartment } from '@models/apartmentDevice';
 
 @Service()
 export default class DeviceService {
@@ -29,18 +29,11 @@ export default class DeviceService {
     ): Promise<void> {
         this.Logger.info('Updating images!');
 
-        const deviceWithOrganization = await Device.findByPk(deviceId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (deviceWithOrganization?.organization.ownerId !== userId)
+        const device = await Device.findByPk(deviceId);
+        if (device?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
-        await deviceWithOrganization.update({ imagesPath: imagesPath });
+        await device.update({ imagesPath: imagesPath });
 
         this.Logger.info('Images updated');
     }
@@ -51,23 +44,15 @@ export default class DeviceService {
     ): Promise<void> {
         this.Logger.info('Deleting files!');
 
-        const deviceWithOrganization = await Device.findByPk(deviceId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (deviceWithOrganization?.organization.ownerId !== userId)
+        const device = await Device.findByPk(deviceId);
+        if (device?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
-        if (deviceWithOrganization) {
-            deviceWithOrganization.imagesUrl =
-                deviceWithOrganization.imagesUrl.filter(
-                    (url) => url !== imagePath
-                );
-            await deviceWithOrganization.save();
+        if (device) {
+            device.imagesUrl = device.imagesUrl.filter(
+                (url) => url !== imagePath
+            );
+            await device.save();
             await fs.unlink(imagePath, (err) => {
                 if (err) this.Logger.error(err);
                 else {
@@ -84,29 +69,34 @@ export default class DeviceService {
         description: string,
         imagesUrl: string[],
         apartmentId: string,
-        titleImage: string
+        titleImage: string,
+        userId: string
     ): Promise<string> {
         this.Logger.info('Creating new Device!');
 
         const apartment = await Apartment.findByPk(apartmentId);
 
-        if (apartment?.organizationId) {
-            const device = await Device.create({
-                title: title,
-                description: description,
-                imagesUrl: imagesUrl,
-                apartmentId: apartmentId,
-                titleImage: titleImage,
-                organizationId: apartment.organizationId,
-            });
+        if (!apartment) throw new Error('This apartment does not exists');
+        if (apartment?.ownerId !== userId)
+            throw new ForbiddenError('You are not owner of this apartment');
 
-            this.Logger.info('Created new Device!');
-            return device.deviceId;
-        }
+        const device = await Device.create({
+            title: title,
+            description: description,
+            imagesUrl: imagesUrl,
+            apartmentId: apartmentId,
+            titleImage: titleImage,
+            ownerId: userId,
+        });
 
-        this.Logger.info('Failed to find apartment!');
+        this.Logger.info('Created new Device!');
 
-        return '';
+        await DeviceApartment.create({
+            deviceId: device.deviceId,
+            apartmentId: apartmentId,
+        });
+
+        return device.deviceId;
     }
     public async UpdateDevice(
         title: string,
@@ -117,16 +107,9 @@ export default class DeviceService {
     ): Promise<void> {
         this.Logger.info('Updating Beach!');
 
-        const deviceWithOrganization = await Device.findByPk(deviceId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (deviceWithOrganization?.organization.ownerId !== userId)
-            throw new ForbiddenError('You are not the owner of this object.');
+        const device = await Device.findByPk(deviceId);
+        if (device?.ownerId !== userId)
+            throw new ForbiddenError('You are not the owner of this device.');
 
         await Device.update(
             {
@@ -140,19 +123,32 @@ export default class DeviceService {
         this.Logger.info('Updated Device!');
     }
 
-    public async DeleteDevice(deviceId: string, userId: string): Promise<void> {
-        this.Logger.info('Deleting device');
+    public async DeleteDevice(
+        deviceId: string,
+        userId: string,
+        apartmentId: string
+    ): Promise<void> {
+        const device = await Device.findByPk(deviceId);
 
-        const device = await Device.findByPk(deviceId, {
-            include: [{ model: Organization, required: true }],
-        });
-
-        if (device?.organization.ownerId !== userId) {
-            throw new ForbiddenError('You dont have access to this Device');
+        if (!device) {
+            throw new Error('Device not found');
         }
 
-        if (!device) throw new Error('Device not found');
-        await device.destroy();
+        if (device.ownerId !== userId) {
+            throw new ForbiddenError('You do not have access to this Device');
+        }
+
+        await DeviceApartment.destroy({
+            where: { deviceId: deviceId, apartmentId: apartmentId },
+        });
+
+        const deviceCountInApartmentAttraction = await DeviceApartment.count({
+            where: { deviceId: deviceId },
+        });
+
+        if (deviceCountInApartmentAttraction === 0) {
+            await device.destroy();
+        }
 
         this.Logger.info('Device deleted');
     }

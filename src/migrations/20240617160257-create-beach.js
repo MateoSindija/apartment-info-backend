@@ -13,7 +13,7 @@ module.exports = {
                     primaryKey: true,
                     type: DataType.UUID,
                 },
-                apartmentId: {
+                ownerId: {
                     foreignKey: true,
                     type: DataType.UUID,
                 },
@@ -43,6 +43,10 @@ module.exports = {
                     allowNull: false,
                     type: DataType.DATE,
                 },
+                deletedAt: {
+                    allowNull: true,
+                    type: DataType.DATE,
+                },
             }
         );
         beach.associates = (models) => {
@@ -52,6 +56,9 @@ module.exports = {
         };
     },
     async down(queryInterface) {
-        await queryInterface.dropTable('Beaches');
+        await queryInterface.dropTable({
+            schema: schema,
+            tableName: 'Beaches',
+        });
     },
 };

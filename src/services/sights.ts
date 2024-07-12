@@ -1,10 +1,10 @@
 import { Inject, Service } from 'typedi';
 import { LoggerType } from '@loaders/logger';
-import { Organization } from '@models/organization';
 import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
 import fs from 'fs';
 import { Sight } from '@models/sight';
+import { SightApartment } from '@models/apartmentSight';
 
 @Service()
 export default class SightService {
@@ -23,51 +23,38 @@ export default class SightService {
         return sight;
     }
     public async UpdateImage(
-        shopId: string,
+        sightId: string,
         userId: string,
         imagesPath: string[]
     ): Promise<void> {
         this.Logger.info('Updating images!');
 
-        const sightWithOrganization = await Sight.findByPk(shopId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (sightWithOrganization?.organization.ownerId !== userId)
+        const sight = await Sight.findByPk(sightId);
+        if (sight?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
-        await sightWithOrganization.update({ imagesPath: imagesPath });
+        await sight.update({ imagesPath: imagesPath });
 
         this.Logger.info('Images updated');
     }
     public async DeleteImage(
-        shopId: string,
+        sightId: string,
         userId: string,
         imagePath: string
     ): Promise<void> {
         this.Logger.info('Deleting files!');
 
-        const sightWithOrganization = await Sight.findByPk(shopId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (sightWithOrganization?.organization.ownerId !== userId)
-            throw new ForbiddenError('You are not the owner of this object.');
+        const sight = await Sight.findByPk(sightId);
+        if (sight?.ownerId !== userId)
+            throw new ForbiddenError(
+                'You are not the owner of this apartment.'
+            );
 
-        if (sightWithOrganization) {
-            sightWithOrganization.imagesUrl =
-                sightWithOrganization.imagesUrl.filter(
-                    (url) => url !== imagePath
-                );
-            await sightWithOrganization.save();
+        if (sight) {
+            sight.imagesUrl = sight.imagesUrl.filter(
+                (url) => url !== imagePath
+            );
+            await sight.save();
             await fs.unlink(imagePath, (err) => {
                 if (err) this.Logger.error(err);
                 else {
@@ -86,31 +73,36 @@ export default class SightService {
         lat: number,
         lng: number,
         imagePaths: string[],
-        titleImage: string
+        titleImage: string,
+        userId: string
     ): Promise<string> {
-        this.Logger.info('Creating new shop!');
+        this.Logger.info('Creating new Sight!');
 
         const apartment = await Apartment.findByPk(apartmentId);
 
-        if (apartment?.organizationId) {
-            const sight = await Sight.create({
-                title: title,
-                description: description,
-                apartmentId: apartmentId,
-                lat: lat,
-                lng: lng,
-                imagesUrl: imagePaths,
-                organizationId: apartment.organizationId,
-                titleImage: titleImage,
-            });
+        if (!apartment) throw new Error("This apartment doesn't exists");
+        if (apartment.ownerId !== userId)
+            throw new ForbiddenError('You are not owner of this apartment');
 
-            this.Logger.info('Created new sight!');
-            return sight.sightId;
-        }
+        const sight = await Sight.create({
+            title: title,
+            description: description,
+            apartmentId: apartmentId,
+            lat: lat,
+            lng: lng,
+            imagesUrl: imagePaths,
+            ownerId: userId,
+            titleImage: titleImage,
+        });
 
-        this.Logger.info('Failed to find apartment!');
+        this.Logger.info('Created new sight!');
 
-        return '';
+        await SightApartment.create({
+            sightId: sight.sightId,
+            apartmentId: apartmentId,
+        });
+
+        return sight.sightId;
     }
     public async UpdateSight(
         title: string,
@@ -123,15 +115,8 @@ export default class SightService {
     ): Promise<void> {
         this.Logger.info('Updating Sight!');
 
-        const sightWithOrganization = await Sight.findByPk(sightId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (sightWithOrganization?.organization.ownerId !== userId)
+        const sight = await Sight.findByPk(sightId);
+        if (sight?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
         await Sight.update(
@@ -148,19 +133,34 @@ export default class SightService {
         this.Logger.info('Updated sight!');
     }
 
-    public async DeleteSight(sightId: string, userId: string): Promise<void> {
+    public async DeleteSight(
+        sightId: string,
+        userId: string,
+        apartmentId: string
+    ): Promise<void> {
         this.Logger.info('Deleting sight');
 
-        const sight = await Sight.findByPk(sightId, {
-            include: [{ model: Organization, required: true }],
-        });
+        const sight = await Sight.findByPk(sightId);
 
-        if (sight?.organization.ownerId !== userId) {
-            throw new ForbiddenError('You dont have access to this Sight');
+        if (!sight) {
+            throw new Error('Sight not found');
         }
 
-        if (!sight) throw new Error('Sight not found');
-        await sight.destroy();
+        if (sight.ownerId !== userId) {
+            throw new ForbiddenError('You do not have access to this Sight');
+        }
+
+        await SightApartment.destroy({
+            where: { sightId: sightId, apartmentId: apartmentId },
+        });
+
+        const sightCountInApartmentAttraction = await SightApartment.count({
+            where: { sightId: sightId },
+        });
+
+        if (sightCountInApartmentAttraction === 0) {
+            await sight.destroy();
+        }
 
         this.Logger.info('Sight deleted');
     }

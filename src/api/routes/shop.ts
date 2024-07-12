@@ -62,6 +62,7 @@ export default (app: Router) => {
             const Logger: LoggerType = Container.get('logger');
             Logger.debug('Calling New Shop endpoint');
             try {
+                const userID = req.decoded.id;
                 const shopServiceInstance = Container.get(ShopService);
                 const {
                     title,
@@ -87,7 +88,8 @@ export default (app: Router) => {
                     lat,
                     lng,
                     imagesPath,
-                    imagesPath[titleImage]
+                    imagesPath[titleImage],
+                    userID
                 );
 
                 res.status(200).json({ shopId });
@@ -199,7 +201,7 @@ export default (app: Router) => {
     );
 
     route.delete(
-        '/:shopId',
+        '/:apartmentId/:shopId',
         userAuth,
         validateRequestParams(ParamShopUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
@@ -208,11 +210,16 @@ export default (app: Router) => {
 
             try {
                 const shopId = req.params.shopId;
+                const apartmentId = req.params.apartmentId;
                 const userId = req.decoded.id;
 
                 const shopServiceInstance = Container.get(ShopService);
 
-                await shopServiceInstance.DeleteShop(shopId, userId);
+                await shopServiceInstance.DeleteShop(
+                    shopId,
+                    userId,
+                    apartmentId
+                );
 
                 res.status(200).end();
             } catch (e) {

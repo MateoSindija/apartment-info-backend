@@ -2,7 +2,6 @@ import { Inject, Service } from 'typedi';
 import { LoggerType } from '@loaders/logger';
 import { Apartment } from '@models/apartment';
 import { Reservation } from '@models/reservation';
-import { Organization } from '@models/organization';
 import { ForbiddenError } from '@errors/appError';
 
 @Service()
@@ -33,15 +32,12 @@ export default class ReservationService {
         const apartmentWithReservations = await Apartment.findByPk(
             apartmentId,
             {
-                include: [
-                    { model: Reservation, required: true },
-                    { model: Organization, required: true },
-                ],
+                include: [{ model: Reservation, required: true }],
             }
         );
 
         if (
-            apartmentWithReservations?.organization.ownerId !== userId &&
+            apartmentWithReservations?.ownerId !== userId &&
             !isRequestFromWebCheck
         ) {
             throw new ForbiddenError('You dont have access to this apartment');
@@ -78,14 +74,14 @@ export default class ReservationService {
             {
                 include: [
                     {
-                        model: Organization,
+                        model: Apartment,
                         required: true,
                     },
                 ],
             }
         );
 
-        if (reservationWithOrganization?.organization.ownerId !== userId) {
+        if (reservationWithOrganization?.apartment.ownerId !== userId) {
             throw new ForbiddenError('You dont have access to this apartment');
         }
 
@@ -105,10 +101,10 @@ export default class ReservationService {
         this.Logger.info('Deleting reservation period');
 
         const reservation = await Reservation.findByPk(reservationId, {
-            include: [{ model: Organization, required: true }],
+            include: [{ model: Apartment, required: true }],
         });
 
-        if (reservation?.organization.ownerId !== userId) {
+        if (reservation?.apartment.ownerId !== userId) {
             throw new ForbiddenError('You dont have access to this Apartment');
         }
 

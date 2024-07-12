@@ -4,10 +4,8 @@ import { Apartment } from '@models/apartment';
 
 import { ForbiddenError } from '@errors/appError';
 import { Scraping } from '@models/scraping';
-import { Organization } from '@models/organization';
-import axios from 'axios';
-import { load } from 'cheerio';
 import * as console from 'console';
+import puppeteer from 'puppeteer';
 
 @Service()
 export default class ScrapingService {
@@ -28,38 +26,22 @@ export default class ScrapingService {
             return;
         }
 
-        if (apartment?.organization.ownerId !== userId) {
+        if (apartment?.ownerId !== userId) {
             throw new ForbiddenError('You dont have access to this Apartment');
         }
 
-        await Scraping.create({
-            url: url,
-            organizationId: apartment.apartmentId,
-            apartmentId: apartment.apartmentId,
-            siteType: siteType,
-        });
+        // await Scraping.create({
+        //     url: url,
+        //     organizationId: apartment.apartmentId,
+        //     apartmentId: apartment.apartmentId,
+        //     siteType: siteType,
+        // });
 
         this.Logger.info('Added new scraping link');
-
-        const { data } = await axios(url);
-
-        const $ = load(data);
-        switch (siteType) {
-            case 'TripAdvisor':
-                const selectedElem = '.DSinh';
-
-                $(selectedElem).each((parentIndex, parentElem) => {
-                    let keyIndex = 0;
-                    const data = {};
-                    if (parentIndex) {
-                        $(parentElem)
-                            .children()
-                            .each((childId, childElem) => {
-                                console.log(childElem);
-                            });
-                    }
-                });
-        }
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        await page.goto(url);
+        console.log(page.$eval('ul.DSinh', (el) => console.log(el)));
     }
 
     public async DeleteScrapingLink(
@@ -69,10 +51,10 @@ export default class ScrapingService {
         this.Logger.info('Deleting scraping link!');
 
         const scraping = await Scraping.findByPk(scrapingId, {
-            include: [{ model: Organization, required: true }],
+            include: [{ model: Apartment, required: true }],
         });
 
-        if (scraping?.organization.ownerId !== userId) {
+        if (scraping?.apartment.ownerId !== userId) {
             throw new ForbiddenError('You dont have access to this Apartment');
         }
 

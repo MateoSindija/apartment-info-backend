@@ -11,8 +11,12 @@ import { Sight } from '@models/sight';
 import { Apartment } from '@models/apartment';
 import { Beach } from '@models/beach';
 import { Device } from '@models/device';
-import { Organization } from '@models/organization';
 import { Restaurant } from '@models/restaurant';
+import { Message } from '@models/message';
+import { Reservation } from '@models/reservation';
+import { Review } from '@models/review';
+import { Scraping } from '@models/scraping';
+import { ApartmentAttraction } from '@models/apartmentAttraction';
 
 const connect = async () => {
     try {
@@ -57,8 +61,12 @@ const connect = async () => {
                     Apartment,
                     Beach,
                     Device,
-                    Organization,
+                    ApartmentAttraction,
                     Restaurant,
+                    Message,
+                    Reservation,
+                    Review,
+                    Scraping,
                 ],
             }
         );

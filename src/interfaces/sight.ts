@@ -18,4 +18,7 @@ export const UpdateSightDTO = z.object({
     titleImage: z.string(),
 });
 
-export const ParamSightUUID = z.object({ sightId: z.string().uuid() });
+export const ParamSightUUID = z.object({
+    sightId: z.string().uuid(),
+    apartmentId: z.string().uuid(),
+});

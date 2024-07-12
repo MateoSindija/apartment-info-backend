@@ -1,11 +1,11 @@
 import { Inject, Service } from 'typedi';
 import { LoggerType } from '@loaders/logger';
-import { Organization } from '@models/organization';
 import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
 import fs from 'fs';
 import { Beach } from '@models/beach';
 import { Sight } from '@models/sight';
+import { BeachApartment } from '@models/apartmentBeach';
 
 @Service()
 export default class BeachService {
@@ -30,18 +30,12 @@ export default class BeachService {
     ): Promise<void> {
         this.Logger.info('Updating images!');
 
-        const beachWithOrganization = await Beach.findByPk(beachId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (beachWithOrganization?.organization.organizationId !== userId)
+        const beach = await Beach.findByPk(beachId);
+
+        if (beach?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
-        await beachWithOrganization.update({ imagesPath: imagesPath });
+        await beach.update({ imagesPath: imagesPath });
 
         this.Logger.info('Images updated');
     }
@@ -52,23 +46,15 @@ export default class BeachService {
     ): Promise<void> {
         this.Logger.info('Deleting files!');
 
-        const beachWithOrganization = await Beach.findByPk(beachId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (beachWithOrganization?.organization.ownerId !== userId)
+        const beach = await Beach.findByPk(beachId);
+        if (beach?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
-        if (beachWithOrganization) {
-            beachWithOrganization.imagesUrl =
-                beachWithOrganization.imagesUrl.filter(
-                    (url) => url !== imagePath
-                );
-            await beachWithOrganization.save();
+        if (beach) {
+            beach.imagesUrl = beach.imagesUrl.filter(
+                (url) => url !== imagePath
+            );
+            await beach.save();
             await fs.unlink(imagePath, (err) => {
                 if (err) this.Logger.error(err);
                 else {
@@ -86,6 +72,7 @@ export default class BeachService {
         apartmentId: string,
         lat: number,
         lng: number,
+        userId: string,
         terrainType: string,
         imagePaths: string[],
         titleImage: string
@@ -94,26 +81,29 @@ export default class BeachService {
 
         const apartment = await Apartment.findByPk(apartmentId);
 
-        if (apartment?.organizationId) {
-            const beach = await Beach.create({
-                title: title,
-                description: description,
-                apartmentId: apartmentId,
-                terrainType: terrainType,
-                lat: lat,
-                lng: lng,
-                imagesUrl: imagePaths,
-                organizationId: apartment.organizationId,
-                titleImage: titleImage,
-            });
+        if (!apartment?.apartmentId)
+            throw new Error('This apartment does not exists');
 
-            this.Logger.info('Created new beach!');
-            return beach.beachId;
-        }
+        const beach = await Beach.create({
+            title: title,
+            description: description,
+            apartmentId: apartmentId,
+            terrainType: terrainType,
+            lat: lat,
+            lng: lng,
+            imagesUrl: imagePaths,
+            ownerId: userId,
+            titleImage: titleImage,
+        });
 
-        this.Logger.info('Failed to find apartment!');
+        this.Logger.info('Created new beach!');
 
-        return '';
+        await BeachApartment.create({
+            apartmentId: apartmentId,
+            beachId: beach.beachId,
+        });
+
+        return beach.beachId;
     }
     public async UpdateBeach(
         title: string,
@@ -127,15 +117,8 @@ export default class BeachService {
     ): Promise<void> {
         this.Logger.info('Updating Beach!');
 
-        const beachWithOrganization = await Beach.findByPk(beachId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (beachWithOrganization?.organization.ownerId !== userId)
+        const beach = await Beach.findByPk(beachId);
+        if (beach?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
         await Beach.update(
@@ -153,19 +136,30 @@ export default class BeachService {
         this.Logger.info('Updated Beach!');
     }
 
-    public async DeleteBeach(beachId: string, userId: string): Promise<void> {
+    public async DeleteBeach(
+        beachId: string,
+        userId: string,
+        apartmentId: string
+    ): Promise<void> {
         this.Logger.info('Deleting beach');
 
-        const beach = await Beach.findByPk(beachId, {
-            include: [{ model: Organization, required: true }],
-        });
-
-        if (beach?.organization.ownerId !== userId) {
-            throw new ForbiddenError('You dont have access to this Beach');
-        }
+        const beach = await Beach.findByPk(beachId);
 
         if (!beach) throw new Error('Beach not found');
-        await beach.destroy();
+        if (beach.ownerId !== userId) {
+            throw new ForbiddenError('You dont have access to this Beach');
+        }
+        await BeachApartment.destroy({
+            where: { beachId: beachId, apartmentId: apartmentId },
+        });
+
+        const beachCountInApartmentAttraction = await BeachApartment.count({
+            where: { beachId: beachId },
+        });
+
+        if (beachCountInApartmentAttraction === 0) {
+            await beach.destroy();
+        }
 
         this.Logger.info('Beach  deleted');
     }

@@ -57,6 +57,7 @@ export default (app: Router) => {
             const Logger: LoggerType = Container.get('logger');
             Logger.debug('Calling New Sight endpoint');
             try {
+                const userId = req.decoded.id;
                 const sightServiceInstance = Container.get(SightService);
                 const {
                     title,
@@ -82,7 +83,8 @@ export default (app: Router) => {
                     lat,
                     lng,
                     imagesPath,
-                    imagesPath[titleImage]
+                    imagesPath[titleImage],
+                    userId
                 );
 
                 res.status(200).json({ sightId });
@@ -219,7 +221,7 @@ export default (app: Router) => {
     );
 
     route.delete(
-        '/:sightId',
+        '/:apartmentId/:sightId',
         userAuth,
         validateRequestParams(ParamSightUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
@@ -228,11 +230,16 @@ export default (app: Router) => {
 
             try {
                 const sightId = req.params.sightId;
+                const apartmentId = req.params.apartmentId;
                 const userId = req.decoded.id;
 
                 const sightServiceInstance = Container.get(SightService);
 
-                await sightServiceInstance.DeleteSight(sightId, userId);
+                await sightServiceInstance.DeleteSight(
+                    sightId,
+                    userId,
+                    apartmentId
+                );
 
                 res.status(200).end();
             } catch (e) {

@@ -4,7 +4,7 @@ const schema = process.env.DEV_POSTGRES_SCHEMA || 'public';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(queryInterface) {
-        const scrapingLink = await queryInterface.createTable(
+        await queryInterface.createTable(
             {
                 schema: schema,
                 tableName: 'ScrapingLinks',
@@ -26,21 +26,8 @@ module.exports = {
                 siteType: {
                     type: DataType.STRING,
                 },
-                organizationId: {
-                    foreignKey: true,
-                    type: DataType.UUID,
-                },
             }
         );
-
-        scrapingLink.associates = (models) => {
-            scrapingLink.belongsTo(models.Apartment, {
-                foreignKey: 'apartmentId',
-            });
-            scrapingLink.belongsTo(models.Organization, {
-                foreignKey: 'organizationId',
-            });
-        };
     },
 
     async down(queryInterface) {

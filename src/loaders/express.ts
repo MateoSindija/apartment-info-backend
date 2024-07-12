@@ -1,14 +1,14 @@
-import express, {NextFunction, Request, Response} from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import routes from '../api/';
 import config from '@config/config';
-import {AppError} from '@errors/appError';
-import {StatusCodes} from 'http-status-codes';
-import {ErrorHandler} from '@errors/handler';
-import {CommonErrors} from '@errors/common';
-import {loggerMiddleware, PinoLogger} from './logger';
+import { AppError } from '@errors/appError';
+import { StatusCodes } from 'http-status-codes';
+import { ErrorHandler } from '@errors/handler';
+import { CommonErrors } from '@errors/common';
+import { loggerMiddleware, PinoLogger } from './logger';
 
-export default ({app}: { app: express.Application }) => {
+export default ({ app }: { app: express.Application }): void => {
     /**
      * Health Check endpoints
      * @TODO Explain why they are here
@@ -39,15 +39,13 @@ export default ({app}: { app: express.Application }) => {
     app.use(
         cors({
             credentials: true,
-            origin: [
-                'http://localhost:8080',
-            ],
+            origin: ['http://localhost:3000'],
         })
     );
 
     // Transforms the raw string of req.body into json
     app.use(express.json());
-    app.use(express.urlencoded({extended: true}));
+    app.use(express.urlencoded({ extended: true }));
 
     // Load API routes
     app.use(config.app.prefix, routes());
@@ -78,7 +76,7 @@ export default ({app}: { app: express.Application }) => {
 
         // Answer app errors with a message to the client
         if (error instanceof AppError) {
-            res.status(error?.status || 500).json({message: error.message});
+            res.status(error?.status || 500).json({ message: error.message });
             return;
         }
 

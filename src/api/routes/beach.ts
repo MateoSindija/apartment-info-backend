@@ -56,6 +56,8 @@ export default (app: Router) => {
         ) => {
             const Logger: LoggerType = Container.get('logger');
             Logger.debug('Calling New Beach endpoint');
+            const userID = req.decoded.id;
+
             try {
                 const beachServiceInstance = Container.get(BeachService);
                 const {
@@ -82,6 +84,7 @@ export default (app: Router) => {
                     apartmentId,
                     lat,
                     lng,
+                    userID,
                     terrainType,
                     imagesPath,
                     imagesPath[titleImage]
@@ -229,7 +232,7 @@ export default (app: Router) => {
     );
 
     route.delete(
-        '/:beachId',
+        '/:apartmentId/:beachId',
         userAuth,
         validateRequestParams(ParamBeachUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
@@ -238,11 +241,16 @@ export default (app: Router) => {
 
             try {
                 const beachId = req.params.beachId;
+                const apartmentId = req.params.apartmentId;
                 const userId = req.decoded.id;
 
                 const beachServiceInstance = Container.get(BeachService);
 
-                await beachServiceInstance.DeleteBeach(beachId, userId);
+                await beachServiceInstance.DeleteBeach(
+                    beachId,
+                    userId,
+                    apartmentId
+                );
 
                 res.status(200).end();
             } catch (e) {

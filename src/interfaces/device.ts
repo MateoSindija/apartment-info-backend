@@ -14,4 +14,7 @@ export const UpdateDeviceDTO = z.object({
     titleImage: z.string(),
 });
 
-export const ParamDeviceUUID = z.object({ deviceId: z.string().uuid() });
+export const ParamDeviceUUID = z.object({
+    deviceId: z.string().uuid(),
+    apartmentId: z.string().uuid(),
+});

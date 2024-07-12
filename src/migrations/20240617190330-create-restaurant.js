@@ -13,6 +13,10 @@ module.exports = {
                     primaryKey: true,
                     type: DataType.UUID,
                 },
+                ownerId: {
+                    foreignKey: true,
+                    type: DataType.UUID,
+                },
                 title: {
                     type: DataType.STRING,
                 },
@@ -24,10 +28,6 @@ module.exports = {
                 },
                 lng: {
                     type: DataType.DOUBLE,
-                },
-                apartmentId: {
-                    foreignKey: true,
-                    type: DataType.STRING,
                 },
                 review: {
                     type: DataType.DOUBLE,
@@ -52,6 +52,10 @@ module.exports = {
                     allowNull: false,
                     type: DataType.DATE,
                 },
+                deletedAt: {
+                    allowNull: true,
+                    type: DataType.DATE,
+                },
             }
         );
         restaurant.associates = (models) => {
@@ -61,6 +65,9 @@ module.exports = {
         };
     },
     async down(queryInterface) {
-        await queryInterface.dropTable('Restaurants');
+        await queryInterface.dropTable({
+            schema: schema,
+            tableName: 'Restaurants',
+        });
     },
 };

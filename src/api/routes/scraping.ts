@@ -29,7 +29,7 @@ export default (app: Router) => {
                 const scrapingServiceInstance = Container.get(ScrapingService);
                 const { siteUrl, apartmentId } = req.body;
                 const userId = req.decoded.id;
-                let siteType = '';
+                let siteType: 'TripAdvisor' | '' = '';
 
                 if (siteUrl.includes('https://www.tripadvisor.com/Tourism')) {
                     siteType = 'TripAdvisor';

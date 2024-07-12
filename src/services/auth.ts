@@ -77,7 +77,7 @@ export default class AuthService {
         password: string
     ): Promise<{ token: string; type: string; id: string | undefined }> {
         try {
-            const user = await User.findOne({ where: { Email: email } });
+            const user = await User.findOne({ where: { email: email } });
 
             const match = await this.comparePassword(
                 password,
@@ -108,7 +108,7 @@ export default class AuthService {
 
     public async InitResetPassword(email: string): Promise<void> {
         try {
-            const user = await User.findOne({ where: { Email: email } });
+            const user = await User.findOne({ where: { email: email } });
 
             if (user?.resetCode) user.resetCode = randomUUID();
 
@@ -136,7 +136,7 @@ export default class AuthService {
         password: string
     ): Promise<void> {
         try {
-            const user = await User.findOne({ where: { Email: email } });
+            const user = await User.findOne({ where: { email: email } });
 
             const decoded = this.verifyResetToken(token);
 
@@ -178,7 +178,7 @@ export default class AuthService {
     private async generateToken(
         userID: string,
         loginKey: string,
-        type: 'user' | 'employee',
+        type: 'user',
         objectID?: string
     ): Promise<string> {
         const today = new Date();

@@ -16,8 +16,6 @@ import {
     UpdateRestaurantDTO,
 } from '@interfaces/restaurant';
 import RestaurantService from '@services/restaurant';
-import { OrganizationParamUUID } from '@interfaces/organization';
-import OrganizationService from '@services/organization';
 
 const route = Router();
 
@@ -64,6 +62,7 @@ export default (app: Router) => {
             const Logger: LoggerType = Container.get('logger');
             Logger.debug('Calling New Restaurant endpoint');
             try {
+                const userID = req.decoded.id;
                 const restaurantServiceInstance =
                     Container.get(RestaurantService);
                 const {
@@ -99,7 +98,8 @@ export default (app: Router) => {
                         review,
                         reviewAmount,
                         imagesPath,
-                        imagesPath[titleImage]
+                        imagesPath[titleImage],
+                        userID
                     );
 
                 res.status(200).json({ restaurantId });
@@ -232,7 +232,7 @@ export default (app: Router) => {
     );
 
     route.delete(
-        '/:restaurantId',
+        '/:apartmentId/:restaurantId',
         userAuth,
         validateRequestQuery(ParamRestaurantUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
@@ -241,6 +241,7 @@ export default (app: Router) => {
 
             try {
                 const restaurantId = req.params.restaurantId;
+                const apartmentId = req.params.apartmentId;
                 const userId = req.decoded.id;
 
                 const restaurantServiceInstance =
@@ -248,7 +249,8 @@ export default (app: Router) => {
 
                 await restaurantServiceInstance.DeleteRestaurant(
                     restaurantId,
-                    userId
+                    userId,
+                    apartmentId
                 );
 
                 res.status(200).end();

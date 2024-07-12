@@ -180,14 +180,15 @@ export default (app: Router): void => {
                 const { name, description, organizationId, lat, lng, address } =
                     req.body;
 
-                const apartmentId = apartmentServiceInstance.CreateApartment(
-                    name,
-                    description,
-                    lat,
-                    lng,
-                    address,
-                    organizationId
-                );
+                const apartmentId =
+                    await apartmentServiceInstance.CreateApartment(
+                        name,
+                        description,
+                        lat,
+                        lng,
+                        address,
+                        organizationId
+                    );
 
                 res.status(200).json({ apartmentId });
             } catch (e) {

@@ -58,6 +58,7 @@ export default (app: Router) => {
             const Logger: LoggerType = Container.get('logger');
             Logger.debug('Calling New Device endpoint');
             try {
+                const userID = req.decoded.id;
                 const deviceServiceInstance = Container.get(DeviceService);
                 const {
                     title,
@@ -80,7 +81,8 @@ export default (app: Router) => {
                     description,
                     imagesUrl,
                     apartmentId,
-                    imagesPath[titleImage]
+                    imagesPath[titleImage],
+                    userID
                 );
 
                 res.status(200).json({ deviceId });
@@ -216,7 +218,7 @@ export default (app: Router) => {
     );
 
     route.delete(
-        '/:deviceId',
+        '/:apartmentId/:deviceId',
         userAuth,
         validateRequestParams(ParamDeviceUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
@@ -225,11 +227,16 @@ export default (app: Router) => {
 
             try {
                 const deviceId = req.params.deviceId;
+                const apartmentId = req.params.apartmentId;
                 const userId = req.decoded.id;
 
                 const deviceServiceInstance = Container.get(DeviceService);
 
-                await deviceServiceInstance.DeleteDevice(deviceId, userId);
+                await deviceServiceInstance.DeleteDevice(
+                    deviceId,
+                    userId,
+                    apartmentId
+                );
 
                 res.status(200).end();
             } catch (e) {

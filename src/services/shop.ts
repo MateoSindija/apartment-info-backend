@@ -1,11 +1,10 @@
 import { Inject, Service } from 'typedi';
 import { LoggerType } from '@loaders/logger';
 import { Shop } from '@models/shop';
-import { Organization } from '@models/organization';
 import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
 import fs from 'fs';
-import { Sight } from '@models/sight';
+import { ShopApartment } from '@models/apartmentShop';
 
 @Service()
 export default class ShopService {
@@ -18,18 +17,11 @@ export default class ShopService {
     ): Promise<void> {
         this.Logger.info('Updating images!');
 
-        const shopWithOrganization = await Shop.findByPk(shopId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (shopWithOrganization?.organization.ownerId !== userId)
+        const shop = await Shop.findByPk(shopId);
+        if (shop?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
-        await shopWithOrganization.update({ imagesPath: imagesPath });
+        await shop.update({ imagesPath: imagesPath });
 
         this.Logger.info('Images updated');
     }
@@ -40,23 +32,13 @@ export default class ShopService {
     ): Promise<void> {
         this.Logger.info('Deleting files!');
 
-        const shopWithOrganization = await Shop.findByPk(shopId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (shopWithOrganization?.organization.ownerId !== userId)
+        const shop = await Shop.findByPk(shopId);
+        if (shop?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
-        if (shopWithOrganization) {
-            shopWithOrganization.imagesUrl =
-                shopWithOrganization.imagesUrl.filter(
-                    (url) => url !== imagePath
-                );
-            await shopWithOrganization.save();
+        if (shop) {
+            shop.imagesUrl = shop.imagesUrl.filter((url) => url !== imagePath);
+            await shop.save();
             await fs.unlink(imagePath, (err) => {
                 if (err) this.Logger.error(err);
                 else {
@@ -75,31 +57,36 @@ export default class ShopService {
         lat: number,
         lng: number,
         imagePaths: string[],
-        titleImage: string
+        titleImage: string,
+        userId: string
     ): Promise<string> {
         this.Logger.info('Creating new shop!');
 
         const apartment = await Apartment.findByPk(apartmentId);
 
-        if (apartment?.organizationId) {
-            const shop = await Shop.create({
-                title: title,
-                description: description,
-                apartmentId: apartmentId,
-                lat: lat,
-                lng: lng,
-                imagesUrl: imagePaths,
-                organizationId: apartment.organizationId,
-                titleImage: titleImage,
-            });
+        if (!apartment) throw new Error("This apartment doesn't exists");
+        if (apartment.ownerId !== userId)
+            throw new ForbiddenError('You are not owner of this apartment');
 
-            this.Logger.info('Created new shop!');
-            return shop.shopId;
-        }
+        const shop = await Shop.create({
+            title: title,
+            description: description,
+            apartmentId: apartmentId,
+            lat: lat,
+            lng: lng,
+            imagesUrl: imagePaths,
+            ownerId: userId,
+            titleImage: titleImage,
+        });
 
-        this.Logger.info('Failed to find apartment!');
+        this.Logger.info('Created new shop!');
 
-        return '';
+        await ShopApartment.create({
+            shopId: shop.shopId,
+            apartmentId: apartmentId,
+        });
+
+        return shop.shopId;
     }
     public async UpdateShop(
         title: string,
@@ -112,15 +99,8 @@ export default class ShopService {
     ): Promise<void> {
         this.Logger.info('Updating shop!');
 
-        const shopWithOrganization = await Shop.findByPk(shopId, {
-            include: [
-                {
-                    model: Organization,
-                    required: true,
-                },
-            ],
-        });
-        if (shopWithOrganization?.organization.ownerId !== userId)
+        const shop = await Shop.findByPk(shopId);
+        if (shop?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
         await Shop.update(
@@ -137,19 +117,33 @@ export default class ShopService {
         this.Logger.info('Updated shop!');
     }
 
-    public async DeleteShop(shopId: string, userId: string): Promise<void> {
+    public async DeleteShop(
+        shopId: string,
+        userId: string,
+        apartmentId: string
+    ): Promise<void> {
         this.Logger.info('Deleting shop');
+        const shop = await Shop.findByPk(shopId);
 
-        const shop = await Sight.findByPk(shopId, {
-            include: [{ model: Organization, required: true }],
-        });
-
-        if (shop?.organization.ownerId !== userId) {
-            throw new ForbiddenError('You dont have access to this Shop');
+        if (!shop) {
+            throw new Error('Shop not found');
         }
 
-        if (!shop) throw new Error('Shop not found');
-        await shop.destroy();
+        if (shop.ownerId !== userId) {
+            throw new ForbiddenError('You do not have access to this Shop');
+        }
+
+        await ShopApartment.destroy({
+            where: { shopId: shopId, apartmentId: apartmentId },
+        });
+
+        const shopCountInApartmentAttraction = await ShopApartment.count({
+            where: { shopId: shopId },
+        });
+
+        if (shopCountInApartmentAttraction === 0) {
+            await shop.destroy();
+        }
 
         this.Logger.info('Shop deleted');
     }

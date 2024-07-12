@@ -20,4 +20,7 @@ export const UpdateBeachDTO = z.object({
     titleImage: z.string(),
 });
 
-export const ParamBeachUUID = z.object({ beachId: z.string().uuid() });
+export const ParamBeachUUID = z.object({
+    beachId: z.string().uuid(),
+    apartmentId: z.string().uuid(),
+});

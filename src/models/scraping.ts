@@ -9,10 +9,11 @@ import {
     Table,
 } from 'sequelize-typescript';
 import { Apartment } from '@models/apartment';
-import { Organization } from '@models/organization';
+import { User } from '@models/user';
 
 @Table({
     tableName: 'ScrapingLinks',
+    timestamps: false,
 })
 export class Scraping extends Model {
     @PrimaryKey
@@ -34,9 +35,9 @@ export class Scraping extends Model {
     declare apartment: Apartment;
 
     @Column(DataType.UUID)
-    @ForeignKey(() => Organization)
-    declare organizationId: string;
+    @ForeignKey(() => User)
+    declare userId: string;
 
-    @BelongsTo(() => Organization)
-    declare organization: Organization;
+    @BelongsTo(() => User)
+    declare owner: User;
 }

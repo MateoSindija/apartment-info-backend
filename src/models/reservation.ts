@@ -12,7 +12,6 @@ import {
 } from 'sequelize-typescript';
 import { User } from '@models/user';
 import { Apartment } from '@models/apartment';
-import { Organization } from '@models/organization';
 
 @Table({
     tableName: 'Reservations',
@@ -43,11 +42,4 @@ export class Reservation extends Model {
 
     @BelongsTo(() => Apartment)
     declare apartment: Apartment;
-
-    @Column(DataType.UUID)
-    @ForeignKey(() => Organization)
-    declare organizationId: string;
-
-    @BelongsTo(() => Organization)
-    declare organization: Organization;
 }

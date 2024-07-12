@@ -13,15 +13,15 @@ module.exports = {
                     primaryKey: true,
                     type: DataType.UUID,
                 },
+                ownerId: {
+                    foreignKey: true,
+                    type: DataType.UUID,
+                },
                 title: {
                     type: DataType.STRING(50),
                 },
                 description: {
                     type: DataType.STRING(1000),
-                },
-                apartmentId: {
-                    foreignKey: true,
-                    type: DataType.STRING,
                 },
                 createdAt: {
                     allowNull: false,
@@ -29,6 +29,10 @@ module.exports = {
                 },
                 updatedAt: {
                     allowNull: false,
+                    type: DataType.DATE,
+                },
+                deletedAt: {
+                    allowNull: true,
                     type: DataType.DATE,
                 },
             }
@@ -40,6 +44,9 @@ module.exports = {
         };
     },
     async down(queryInterface) {
-        await queryInterface.dropTable('Devices');
+        await queryInterface.dropTable({
+            schema: schema,
+            tableName: 'Devices',
+        });
     },
 };

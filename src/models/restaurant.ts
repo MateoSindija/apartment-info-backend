@@ -4,12 +4,14 @@ import {
     DataType,
     Default,
     ForeignKey,
+    HasMany,
     Model,
     PrimaryKey,
     Table,
 } from 'sequelize-typescript';
 import { Apartment } from '@models/apartment';
-import { Organization } from '@models/organization';
+import { User } from '@models/user';
+import { ApartmentAttraction } from '@models/apartmentAttraction';
 
 @Table({
     tableName: 'Restaurants',
@@ -58,9 +60,12 @@ export class Restaurant extends Model {
     declare apartment: Apartment;
 
     @Column(DataType.UUID)
-    @ForeignKey(() => Organization)
-    declare organizationId: string;
+    @ForeignKey(() => User)
+    declare ownerId: string;
 
-    @BelongsTo(() => Organization)
-    declare organization: Organization;
+    @BelongsTo(() => User)
+    declare owner: User;
+
+    @HasMany(() => ApartmentAttraction, 'attractionId')
+    declare apartmentAttractions: ApartmentAttraction[];
 }

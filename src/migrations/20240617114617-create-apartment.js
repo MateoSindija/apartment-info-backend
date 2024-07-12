@@ -5,7 +5,7 @@ const { DataType } = require('sequelize-typescript');
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
     async up(queryInterface) {
-        const apartment = await queryInterface.createTable(
+        await queryInterface.createTable(
             { schema: schema, tableName: 'Apartments' },
             {
                 apartmentId: {
@@ -14,7 +14,7 @@ module.exports = {
                     defaultValue: DataType.UUIDV4,
                     type: DataType.UUID,
                 },
-                organizationId: {
+                ownerId: {
                     foreignKey: true,
                     type: DataType.UUID,
                 },
@@ -32,16 +32,17 @@ module.exports = {
                     allowNull: false,
                     type: DataType.DATE,
                 },
+                deletedAt: {
+                    allowNull: true,
+                    type: DataType.DATE,
+                },
             }
         );
-
-        apartment.associates = (models) => {
-            apartment.belongsTo(models.Organization, {
-                foreignKey: 'organizationId',
-            });
-        };
     },
     async down(queryInterface) {
-        await queryInterface.dropTable('Apartments');
+        await queryInterface.dropTable({
+            schema: schema,
+            tableName: 'Apartments',
+        });
     },
 };
