@@ -11,6 +11,7 @@ import { Device } from '@models/device';
 
 @Table({
     tableName: 'DeviceApartment',
+    timestamps: false,
 })
 export class DeviceApartment extends Model {
     @ForeignKey(() => Apartment)
@@ -20,10 +21,4 @@ export class DeviceApartment extends Model {
     @ForeignKey(() => Device)
     @Column(DataType.UUID)
     declare deviceId: string;
-
-    @BelongsTo(() => Apartment)
-    declare apartment: Apartment;
-
-    @BelongsTo(() => Device)
-    declare device: Device;
 }

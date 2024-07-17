@@ -9,9 +9,12 @@ import {
     validateRequestBody,
     validateRequestParams,
 } from 'zod-express-middleware';
-import { NewDeviceDTO, ParamDeviceUUID } from '@interfaces/device';
+import {
+    NewDeviceDTO,
+    ParamDeviceUUID,
+    UpdateDeviceDTO,
+} from '@interfaces/device';
 import DeviceService from '@services/device';
-import { UpdateBeachDTO } from '@interfaces/beach';
 
 const route = Router();
 
@@ -138,7 +141,7 @@ export default (app: Router) => {
                 const device =
                     await deviceServiceInstance.GetDeviceById(deviceId);
 
-                res.status(200).json({ device });
+                res.status(200).json(device);
             } catch (e) {
                 return next(e);
             }
@@ -148,11 +151,11 @@ export default (app: Router) => {
     route.patch(
         '/:deviceId',
         userAuth,
-        validateRequestBody(UpdateBeachDTO),
+        validateRequestBody(UpdateDeviceDTO),
         validateRequestParams(ParamDeviceUUID),
         async (
             req: TokenRequest & {
-                body: z.infer<typeof UpdateBeachDTO>;
+                body: z.infer<typeof UpdateDeviceDTO>;
             },
             res: Response,
             next: NextFunction

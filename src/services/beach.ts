@@ -5,7 +5,7 @@ import { Apartment } from '@models/apartment';
 import fs from 'fs';
 import { Beach } from '@models/beach';
 import { Sight } from '@models/sight';
-import { BeachApartment } from '@models/apartmentBeach';
+import { BeachApartment } from '@models/beachApartment';
 
 @Service()
 export default class BeachService {
@@ -89,8 +89,7 @@ export default class BeachService {
             description: description,
             apartmentId: apartmentId,
             terrainType: terrainType,
-            lat: lat,
-            lng: lng,
+            location: { type: 'Point', coordinates: [lng, lat] },
             imagesUrl: imagePaths,
             ownerId: userId,
             titleImage: titleImage,
@@ -126,8 +125,7 @@ export default class BeachService {
                 title: title,
                 description: description,
                 terrainType: terrainType,
-                lat: lat,
-                lng: lng,
+                location: { type: 'Point', coordinates: [lng, lat] },
                 titleImage: titleImage,
             },
             { where: { beachId: beachId } }

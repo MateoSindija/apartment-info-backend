@@ -24,11 +24,9 @@ module.exports = {
                 description: {
                     type: DataType.STRING(1000),
                 },
-                lat: {
-                    type: DataType.DOUBLE,
-                },
-                lng: {
-                    type: DataType.DOUBLE,
+                location: {
+                    allowNull: false,
+                    type: DataType.GEOGRAPHY('Point'),
                 },
                 imagesUrl: {
                     type: DataType.ARRAY(DataType.STRING),

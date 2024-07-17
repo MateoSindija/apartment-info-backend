@@ -178,7 +178,7 @@ export default (app: Router) => {
 
                 const sight = await sightServiceInstance.GetSightById(sightId);
 
-                res.status(200).json({ sight });
+                res.status(200).json(sight);
             } catch (e) {
                 return next(e);
             }

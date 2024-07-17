@@ -16,6 +16,52 @@ export default (app: Router): void => {
     app.use('/apartment', route);
 
     route.get(
+        '/list',
+        userAuth,
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get all apartments endpoint');
+
+            try {
+                const userId = req.decoded.id;
+
+                const apartmentServiceInstance =
+                    Container.get(ApartmentService);
+
+                const apartments =
+                    await apartmentServiceInstance.GetAllUserApartments(userId);
+
+                res.status(200).json({ apartments });
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+    route.get(
+        '/:apartmentId/info',
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get apartment info endpoint');
+
+            try {
+                const apartmentId = req.params.apartmentId;
+
+                const apartmentServiceInstance =
+                    Container.get(ApartmentService);
+
+                const apartment =
+                    await apartmentServiceInstance.GetApartmentInfo(
+                        apartmentId
+                    );
+
+                res.status(200).json(apartment);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.get(
         '/:apartmentId/beaches',
         validateRequestParams(ParamApartmentUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
@@ -33,7 +79,7 @@ export default (app: Router): void => {
                         apartmentId
                     );
 
-                res.status(200).json({ beaches });
+                res.status(200).json(beaches);
             } catch (e) {
                 return next(e);
             }
@@ -57,7 +103,7 @@ export default (app: Router): void => {
                         apartmentId
                     );
 
-                res.status(200).json({ sights });
+                res.status(200).json(sights);
             } catch (e) {
                 return next(e);
             }
@@ -81,7 +127,7 @@ export default (app: Router): void => {
                         apartmentId
                     );
 
-                res.status(200).json({ devices });
+                res.status(200).json(devices);
             } catch (e) {
                 return next(e);
             }
@@ -105,7 +151,7 @@ export default (app: Router): void => {
                         apartmentId
                     );
 
-                res.status(200).json({ shops });
+                res.status(200).json(shops);
             } catch (e) {
                 return next(e);
             }
@@ -130,7 +176,7 @@ export default (app: Router): void => {
                         apartmentId
                     );
 
-                res.status(200).json({ restaurants });
+                res.status(200).json(restaurants);
             } catch (e) {
                 return next(e);
             }
@@ -154,7 +200,7 @@ export default (app: Router): void => {
                         apartmentId
                     );
 
-                res.status(200).json({ reviews });
+                res.status(200).json(reviews);
             } catch (e) {
                 return next(e);
             }
@@ -177,17 +223,16 @@ export default (app: Router): void => {
             try {
                 const apartmentServiceInstance =
                     Container.get(ApartmentService);
-                const { name, description, organizationId, lat, lng, address } =
-                    req.body;
+                const { name, lat, lng, address } = req.body;
+                const userId = req.decoded.id;
 
                 const apartmentId =
                     await apartmentServiceInstance.CreateApartment(
                         name,
-                        description,
                         lat,
                         lng,
                         address,
-                        organizationId
+                        userId
                     );
 
                 res.status(200).json({ apartmentId });

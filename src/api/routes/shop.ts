@@ -15,7 +15,6 @@ import {
     validateRequestBody,
     validateRequestParams,
 } from 'zod-express-middleware';
-
 const route = Router();
 
 const fileFilter = (req, file, cb) => {
@@ -163,6 +162,27 @@ export default (app: Router) => {
                 );
 
                 res.status(200).end();
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.get(
+        '/:shopId',
+        validateRequestParams(ParamShopUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get Shop endpoint');
+
+            try {
+                const shopId = req.params.shopId;
+
+                const shopServiceInstance = Container.get(ShopService);
+
+                const shop = await shopServiceInstance.GetShopById(shopId);
+
+                res.status(200).json(shop);
             } catch (e) {
                 return next(e);
             }

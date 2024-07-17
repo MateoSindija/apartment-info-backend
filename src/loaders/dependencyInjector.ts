@@ -1,6 +1,5 @@
 import { Container } from 'typedi';
 import LoggerInstance from './logger';
-import sgMail from '@sendgrid/mail';
 import PgBoss from 'pg-boss';
 
 export default ({
@@ -24,9 +23,9 @@ export default ({
         });
         LoggerInstance.info('✌️ Models injected into container');
 
-        sgMail.setApiKey(process.env.SENDGRID_API_KEY ?? '');
-        Container.set('mailer', sgMail);
-        LoggerInstance.info('💌Sendgrid Mail injected into container');
+        // sgMail.setApiKey(process.env.SENDGRID_API_KEY ?? '');
+        // Container.set('mailer', sgMail);
+        // LoggerInstance.info('💌Sendgrid Mail injected into container');
 
         Container.set('logger', LoggerInstance);
         LoggerInstance.info('✌️ Logger injected into container');

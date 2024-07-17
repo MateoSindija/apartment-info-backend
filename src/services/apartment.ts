@@ -7,23 +7,48 @@ import { Device } from '@models/device';
 import { Restaurant } from '@models/restaurant';
 import { Shop } from '@models/shop';
 import { Review } from '@models/review';
-import { ApartmentAttraction } from '@models/apartmentAttraction';
-import { BeachApartment } from '@models/apartmentBeach';
-import { ShopApartment } from '@models/apartmentShop';
-import { DeviceApartment } from '@models/apartmentDevice';
-import { RestaurantApartment } from '@models/apartmentRestaurant';
+import { BeachApartment } from '@models/beachApartment';
+import { ShopApartment } from '@models/shopApartment';
+import { DeviceApartment } from '@models/deviceApartment';
+import { RestaurantApartment } from '@models/restaurantApartment';
 
 @Service()
 export default class ApartmentService {
     constructor(@Inject('logger') private Logger: LoggerType) {}
 
+    public async GetAllUserApartments(userId: string): Promise<Apartment[]> {
+        this.Logger.info('Getting all user apartments!');
+
+        const apartments = await Apartment.findAll({
+            where: { ownerId: userId },
+        });
+
+        this.Logger.info('Found all apartments!');
+        return apartments;
+    }
+    public async GetApartmentInfo(apartmentId: string): Promise<Apartment> {
+        this.Logger.info('Getting apartment info!');
+
+        const apartment = await Apartment.findByPk(apartmentId);
+
+        if (!apartment) throw new Error("Apartment doesn't exists");
+
+        this.Logger.info('Found apartment!');
+        return apartment;
+    }
     public async GetAllSightsInApartment(
         apartmentId: string
     ): Promise<Sight[]> {
         this.Logger.info('Getting all sights in apartment!');
 
         const sights = await Sight.findAll({
-            where: { apartmentId: apartmentId },
+            include: [
+                {
+                    model: Apartment,
+                    where: { apartmentId },
+                    attributes: [],
+                },
+            ],
         });
 
         this.Logger.info('Found all sights!');
@@ -38,15 +63,13 @@ export default class ApartmentService {
         const beaches = await Beach.findAll({
             include: [
                 {
-                    model: BeachApartment,
-                    as: 'beachApartment',
-                    where: {
-                        apartmentId: apartmentId,
-                    },
-                    attributes: [], // Do not include ApartmentAttraction attributes in the result
+                    model: Apartment,
+                    where: { apartmentId },
+                    attributes: [],
                 },
             ],
         });
+
         this.Logger.info('Found all beaches!');
         return beaches;
     }
@@ -56,12 +79,9 @@ export default class ApartmentService {
         const shops = await Shop.findAll({
             include: [
                 {
-                    model: ShopApartment,
-                    as: 'shopApartment',
-                    where: {
-                        apartmentId: apartmentId,
-                    },
-                    attributes: [], // Do not include ApartmentAttraction attributes in the result
+                    model: Apartment,
+                    where: { apartmentId },
+                    attributes: [],
                 },
             ],
         });
@@ -77,12 +97,9 @@ export default class ApartmentService {
         const devices = await Device.findAll({
             include: [
                 {
-                    model: DeviceApartment,
-                    as: 'deviceApartment',
-                    where: {
-                        apartmentId: apartmentId,
-                    },
-                    attributes: [], // Do not include ApartmentAttraction attributes in the result
+                    model: Apartment,
+                    where: { apartmentId },
+                    attributes: [],
                 },
             ],
         });
@@ -98,12 +115,9 @@ export default class ApartmentService {
         const restaurants = await Restaurant.findAll({
             include: [
                 {
-                    model: RestaurantApartment,
-                    as: 'restaurantApartment',
-                    where: {
-                        apartmentId: apartmentId,
-                    },
-                    attributes: [], // Do not include ApartmentAttraction attributes in the result
+                    model: Apartment,
+                    where: { apartmentId },
+                    attributes: [],
                 },
             ],
         });
@@ -125,20 +139,17 @@ export default class ApartmentService {
     }
     public async CreateApartment(
         name: string,
-        description: string,
         lat: number,
         lng: number,
         address: string,
-        organizationId: string
+        userId: string
     ): Promise<string> {
         this.Logger.info('Creating new apartment!');
 
         const apartment = await Apartment.create({
             name: name,
-            description: description,
-            organizationId: organizationId,
-            lat: lat,
-            lng: lng,
+            ownerId: userId,
+            location: { type: 'Point', coordinates: [lng, lat] },
             address: address,
         });
 

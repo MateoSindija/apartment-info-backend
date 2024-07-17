@@ -1,5 +1,6 @@
 import {
     BelongsTo,
+    BelongsToMany,
     Column,
     DataType,
     Default,
@@ -10,7 +11,9 @@ import {
     Table,
 } from 'sequelize-typescript';
 import { User } from '@models/user';
-import { ApartmentAttraction } from '@models/apartmentAttraction';
+import { ShopApartment } from '@models/shopApartment';
+import { Apartment } from '@models/apartment';
+import { DeviceApartment } from '@models/deviceApartment';
 
 @Table({
     tableName: 'Shops',
@@ -33,11 +36,8 @@ export class Shop extends Model {
     @Column(DataType.STRING)
     declare titleImage: string;
 
-    @Column(DataType.DOUBLE)
-    declare lat: number;
-
-    @Column(DataType.DOUBLE)
-    declare lng: number;
+    @Column(DataType.GEOGRAPHY('Point'))
+    declare location: number;
 
     @Column(DataType.UUID)
     @ForeignKey(() => User)
@@ -46,6 +46,6 @@ export class Shop extends Model {
     @BelongsTo(() => User)
     declare owner: User;
 
-    @HasMany(() => ApartmentAttraction, 'attractionId')
-    declare apartmentAttractions: ApartmentAttraction[];
+    @BelongsToMany(() => Apartment, () => ShopApartment)
+    declare apartments: Apartment[];
 }

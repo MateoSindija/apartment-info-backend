@@ -24,6 +24,10 @@ module.exports = {
                 address: {
                     type: DataType.STRING,
                 },
+                location: {
+                    allowNull: false,
+                    type: DataType.GEOGRAPHY('Point'),
+                },
                 createdAt: {
                     allowNull: false,
                     type: DataType.DATE,

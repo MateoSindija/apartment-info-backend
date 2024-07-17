@@ -61,6 +61,7 @@ export default (app: Router) => {
         ) => {
             const Logger: LoggerType = Container.get('logger');
             Logger.debug('Calling New Restaurant endpoint');
+            console.log(req.body);
             try {
                 const userID = req.decoded.id;
                 const restaurantServiceInstance =

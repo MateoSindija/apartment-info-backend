@@ -7,23 +7,24 @@ import {
     Table,
 } from 'sequelize-typescript';
 import { Apartment } from '@models/apartment';
-import { Sight } from '@models/sight';
+import { Beach } from '@models/beach';
 
 @Table({
-    tableName: 'SightApartment',
+    tableName: 'BeachApartment',
+    timestamps: false,
 })
-export class SightApartment extends Model {
+export class BeachApartment extends Model {
     @ForeignKey(() => Apartment)
     @Column(DataType.UUID)
     declare apartmentId: string;
 
-    @ForeignKey(() => Sight)
+    @ForeignKey(() => Beach)
     @Column(DataType.UUID)
-    declare sightId: string;
+    declare beachId: string;
 
     @BelongsTo(() => Apartment)
     declare apartment: Apartment;
 
-    @BelongsTo(() => Sight)
-    declare sight: Sight;
+    @BelongsTo(() => Beach)
+    declare beach: Beach;
 }

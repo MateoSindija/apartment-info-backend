@@ -84,32 +84,32 @@ module.exports = {
     async down(queryInterface) {
         // Removing foreign key constraints for ApartmentSight
         await queryInterface.removeConstraint(
-            { schema: schema, tableName: 'ApartmentSight' },
-            'ApartmentSight_apartmentId_fkey'
+            { schema: schema, tableName: 'SightApartment' },
+            'SightApartment_apartmentId_fkey'
         );
         await queryInterface.removeConstraint(
-            { schema: schema, tableName: 'ApartmentSight' },
-            'ApartmentSight_sightId_fkey'
+            { schema: schema, tableName: 'SightApartment' },
+            'SightApartment_sightId_fkey'
         );
 
         // Removing foreign key constraints for ApartmentBeach
         await queryInterface.removeConstraint(
-            { schema: schema, tableName: 'ApartmentBeach' },
-            'ApartmentBeach_apartmentId_fkey'
+            { schema: schema, tableName: 'BeachApartment' },
+            'BeachApartment_apartmentId_fkey'
         );
         await queryInterface.removeConstraint(
-            { schema: schema, tableName: 'ApartmentBeach' },
-            'ApartmentBeach_beachId_fkey'
+            { schema: schema, tableName: 'BeachApartment' },
+            'BeachApartment_beachId_fkey'
         );
 
         // Removing foreign key constraints for ApartmentDevice
         await queryInterface.removeConstraint(
-            { schema: schema, tableName: 'ApartmentDevice' },
-            'ApartmentDevice_apartmentId_fkey'
+            { schema: schema, tableName: 'DeviceApartment' },
+            'DeviceApartment_apartmentId_fkey'
         );
         await queryInterface.removeConstraint(
-            { schema: schema, tableName: 'ApartmentDevice' },
-            'ApartmentDevice_deviceId_fkey'
+            { schema: schema, tableName: 'DeviceApartment' },
+            'DeviceApartment_deviceId_fkey'
         );
     },
 };

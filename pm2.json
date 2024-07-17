@@ -5,9 +5,12 @@
       "script": "ts-node",
       "args": "-r tsconfig-paths/register -p src/main.ts",
       "watch": true,
-      "ignore_watch": ["public", "./public/", "logs", "./logs/", ""],
+      "ignore_watch": ["public", "./public/", "logs", "./logs/", ".idea"],
       "env_production": {
         "NODE_ENV": "production"
+      },
+      "watch_options": {
+        "usePolling": true,
       },
       "env_development": {
         "NODE_ENV": "development"

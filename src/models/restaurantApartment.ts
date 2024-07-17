@@ -1,5 +1,4 @@
 import {
-    BelongsTo,
     Column,
     DataType,
     ForeignKey,
@@ -11,6 +10,7 @@ import { Restaurant } from '@models/restaurant';
 
 @Table({
     tableName: 'RestaurantApartment',
+    timestamps: false,
 })
 export class RestaurantApartment extends Model {
     @ForeignKey(() => Apartment)
@@ -20,10 +20,4 @@ export class RestaurantApartment extends Model {
     @ForeignKey(() => Restaurant)
     @Column(DataType.UUID)
     declare restaurantId: string;
-
-    @BelongsTo(() => Apartment)
-    declare apartment: Apartment;
-
-    @BelongsTo(() => Restaurant)
-    declare restaurant: Restaurant;
 }

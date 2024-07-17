@@ -32,13 +32,13 @@ export class Reservation extends Model {
     @ForeignKey(() => Apartment)
     declare apartmentId: string;
 
-    @AllowNull
-    @Column(DataType.UUID)
-    @ForeignKey(() => User)
-    declare userId: string;
-
-    @HasMany(() => User)
-    declare workers: User[];
+    // @AllowNull
+    // @Column(DataType.UUID)
+    // @ForeignKey(() => User)
+    // declare userId: string;
+    //
+    // @HasMany(() => User)
+    // declare workers: User[];
 
     @BelongsTo(() => Apartment)
     declare apartment: Apartment;

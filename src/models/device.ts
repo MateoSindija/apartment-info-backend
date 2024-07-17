@@ -1,5 +1,6 @@
 import {
     BelongsTo,
+    BelongsToMany,
     Column,
     DataType,
     Default,
@@ -10,7 +11,8 @@ import {
     Table,
 } from 'sequelize-typescript';
 import { User } from '@models/user';
-import { ApartmentAttraction } from '@models/apartmentAttraction';
+import { DeviceApartment } from '@models/deviceApartment';
+import { Apartment } from '@models/apartment';
 
 @Table({
     tableName: 'Devices',
@@ -40,6 +42,6 @@ export class Device extends Model {
     @BelongsTo(() => User)
     declare owner: User;
 
-    @HasMany(() => ApartmentAttraction, 'attractionId')
-    declare apartmentAttractions: ApartmentAttraction[];
+    @BelongsToMany(() => Apartment, () => DeviceApartment)
+    declare apartments: Apartment[];
 }

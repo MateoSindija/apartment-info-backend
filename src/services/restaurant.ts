@@ -4,7 +4,7 @@ import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
 import fs from 'fs';
 import { Restaurant } from '@models/restaurant';
-import { RestaurantApartment } from '@models/apartmentRestaurant';
+import { RestaurantApartment } from '@models/restaurantApartment';
 
 @Service()
 export default class RestaurantService {
@@ -82,8 +82,7 @@ export default class RestaurantService {
             phoneContact: phoneContact,
             review: review,
             reviewAmount: reviewAmount,
-            lat: lat,
-            lng: lng,
+            location: { type: 'Point', coordinates: [lng, lat] },
             imagesUrl: imagePaths,
             ownerId: userId,
             titleImage: titleImage,
@@ -126,8 +125,7 @@ export default class RestaurantService {
                 phoneContact: phoneContact,
                 review: review,
                 reviewAmount: reviewAmount,
-                lat: lat,
-                lng: lng,
+                location: { type: 'Point', coordinates: [lng, lat] },
                 titleImage: titleImage,
             },
             { where: { restaurantId: restaurantId } }

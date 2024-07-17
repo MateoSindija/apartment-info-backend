@@ -4,7 +4,7 @@ import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
 import fs from 'fs';
 import { Sight } from '@models/sight';
-import { SightApartment } from '@models/apartmentSight';
+import { SightApartment } from '@models/sightApartment';
 
 @Service()
 export default class SightService {
@@ -88,8 +88,7 @@ export default class SightService {
             title: title,
             description: description,
             apartmentId: apartmentId,
-            lat: lat,
-            lng: lng,
+            location: { type: 'Point', coordinates: [lng, lat] },
             imagesUrl: imagePaths,
             ownerId: userId,
             titleImage: titleImage,
@@ -123,8 +122,7 @@ export default class SightService {
             {
                 title: title,
                 description: description,
-                lat: lat,
-                lng: lng,
+                location: { type: 'Point', coordinates: [lng, lat] },
                 titleImage: titleImage,
             },
             { where: { sightId: sightId } }

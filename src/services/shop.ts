@@ -4,12 +4,23 @@ import { Shop } from '@models/shop';
 import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
 import fs from 'fs';
-import { ShopApartment } from '@models/apartmentShop';
-
+import { ShopApartment } from '@models/shopApartment';
 @Service()
 export default class ShopService {
     constructor(@Inject('logger') private Logger: LoggerType) {}
 
+    public async GetShopById(shopId: string): Promise<Shop> {
+        this.Logger.info('Getting all shops!');
+
+        const shop = await Shop.findByPk(shopId);
+
+        if (!shop) {
+            throw new Error('Shop not found');
+        }
+
+        this.Logger.info('Found shop!');
+        return shop;
+    }
     public async UpdateImage(
         shopId: string,
         userId: string,
@@ -72,8 +83,7 @@ export default class ShopService {
             title: title,
             description: description,
             apartmentId: apartmentId,
-            lat: lat,
-            lng: lng,
+            location: { type: 'Point', coordinates: [lng, lat] },
             imagesUrl: imagePaths,
             ownerId: userId,
             titleImage: titleImage,
@@ -107,8 +117,7 @@ export default class ShopService {
             {
                 title: title,
                 description: description,
-                lat: lat,
-                lng: lng,
+                location: { type: 'Point', coordinates: [lng, lat] },
                 titleImage: titleImage,
             },
             { where: { shopId: shopId } }

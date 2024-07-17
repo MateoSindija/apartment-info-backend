@@ -18,6 +18,5 @@ export const UpdateShopDTO = z.object({
 
 export const ParamShopUUID = z.object({
     shopId: z.string().uuid(),
-    apartmentId: z.string().uuid(),
 });
 export const ImageUrlDTO = z.object({ imageUrl: z.string() });

@@ -4,7 +4,7 @@ import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
 import fs from 'fs';
 import { Device } from '@models/device';
-import { DeviceApartment } from '@models/apartmentDevice';
+import { DeviceApartment } from '@models/deviceApartment';
 
 @Service()
 export default class DeviceService {
