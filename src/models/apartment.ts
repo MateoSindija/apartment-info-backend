@@ -6,6 +6,7 @@ import {
     Default,
     ForeignKey,
     HasMany,
+    HasOne,
     Model,
     PrimaryKey,
     Table,
@@ -23,6 +24,7 @@ import { DeviceApartment } from '@models/deviceApartment';
 import { Sight } from '@models/sight';
 import { ShopApartment } from '@models/shopApartment';
 import { Shop } from '@models/shop';
+import { AboutUs } from '@models/aboutUs';
 
 @Table({
     tableName: 'Apartments',
@@ -55,6 +57,9 @@ export class Apartment extends Model {
     @BelongsTo(() => User)
     declare owner: User;
 
+    @HasOne(() => AboutUs)
+    declare aboutUs: AboutUs;
+
     @BelongsToMany(() => Restaurant, () => RestaurantApartment)
     declare restaurants: Restaurant[];
 
@@ -65,8 +70,8 @@ export class Apartment extends Model {
     declare devices: Device[];
 
     @BelongsToMany(() => Sight, () => SightApartment)
-    declare sights: Device[];
+    declare sights: Sight[];
 
     @BelongsToMany(() => Shop, () => ShopApartment)
-    declare shop: Shop[];
+    declare shops: Shop[];
 }

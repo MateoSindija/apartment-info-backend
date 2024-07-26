@@ -5,10 +5,28 @@ import { Apartment } from '@models/apartment';
 import fs from 'fs';
 import { Restaurant } from '@models/restaurant';
 import { RestaurantApartment } from '@models/restaurantApartment';
+import {
+    deleteImage,
+    handleImageUrls,
+    handleTitleImage,
+} from '@utils/functions';
 
 @Service()
 export default class RestaurantService {
     constructor(@Inject('logger') private Logger: LoggerType) {}
+
+    public async GetRestaurantById(restaurantId: string): Promise<Restaurant> {
+        this.Logger.info('Getting restaurant!');
+
+        const restaurant = await Restaurant.findByPk(restaurantId);
+
+        if (!restaurant) {
+            throw new Error('Restaurant not found');
+        }
+
+        this.Logger.info('Found restaurant!');
+        return restaurant;
+    }
 
     public async UpdateImage(
         restaurantId: string,
@@ -24,33 +42,6 @@ export default class RestaurantService {
         await restaurant.update({ imagesPath: imagesPath });
 
         this.Logger.info('Images updated');
-    }
-    public async DeleteImage(
-        restaurantId: string,
-        userId: string,
-        imagePath: string
-    ): Promise<void> {
-        this.Logger.info('Deleting files!');
-
-        const restaurant = await Restaurant.findByPk(restaurantId);
-        if (restaurant?.ownerId !== userId)
-            throw new ForbiddenError('You are not the owner of this object.');
-
-        if (restaurant) {
-            restaurant.imagesUrl = restaurant.imagesUrl.filter(
-                (url) => url !== imagePath
-            );
-            await restaurant.save();
-            await fs.unlink(imagePath, (err) => {
-                if (err) this.Logger.error(err);
-                else {
-                    this.Logger.info('File deleted');
-                }
-            });
-            this.Logger.info('Images updated');
-        }
-
-        this.Logger.info('Beach not found');
     }
     public async CreateRestaurant(
         title: string,
@@ -108,7 +99,9 @@ export default class RestaurantService {
         review: number,
         reviewAmount: number,
         restaurantId: string,
-        titleImage: string
+        titleImage: string,
+        imagesPath: string[] | undefined,
+        imagesUrlArray: string[] | undefined
     ): Promise<void> {
         this.Logger.info('Updating Restaurant!');
 
@@ -116,6 +109,15 @@ export default class RestaurantService {
 
         if (restaurant?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
+
+        const existingImagesUrl = restaurant.imagesUrl || [];
+
+        const imagesToDelete = existingImagesUrl.filter(
+            (imageUrl) => !imagesUrlArray?.includes(imageUrl)
+        );
+        for (const imageUrl of imagesToDelete) {
+            await deleteImage(imageUrl);
+        }
 
         await Restaurant.update(
             {
@@ -126,7 +128,8 @@ export default class RestaurantService {
                 review: review,
                 reviewAmount: reviewAmount,
                 location: { type: 'Point', coordinates: [lng, lat] },
-                titleImage: titleImage,
+                imagesUrl: handleImageUrls(imagesPath, imagesUrlArray),
+                titleImage: handleTitleImage(titleImage, imagesPath),
             },
             { where: { restaurantId: restaurantId } }
         );
@@ -165,6 +168,9 @@ export default class RestaurantService {
             });
 
         if (restaurantCountInApartmentAttraction === 0) {
+            for (const imgPath of restaurant.imagesUrl) {
+                await deleteImage(imgPath);
+            }
             await restaurant.destroy();
         }
 

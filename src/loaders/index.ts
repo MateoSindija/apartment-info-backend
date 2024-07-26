@@ -18,6 +18,7 @@ import { SightApartment } from '@models/sightApartment';
 import { DeviceApartment } from '@models/deviceApartment';
 import { User } from '@models/user';
 import { Scraping } from '@models/scraping';
+import { RestaurantApartment } from '@models/restaurantApartment';
 export default async ({ expressApp }) => {
     const postgresInstance = await postgresLoader();
     Logger.info('✌️ DB loaded and connected!');
@@ -58,6 +59,10 @@ export default async ({ expressApp }) => {
         name: 'DeviceApartmentModel',
         model: DeviceApartment,
     };
+    const restaurantApartmentModel = {
+        name: 'RestaurantApartmentModel',
+        model: RestaurantApartment,
+    };
     const reservationModel = {
         name: 'ReservationModel',
         model: Reservation,
@@ -92,6 +97,7 @@ export default async ({ expressApp }) => {
             sightApartmentModel,
             beachApartmentModel,
             shopApartmentModel,
+            restaurantApartmentModel,
             reviewModel,
             restaurantModel,
             shopModel,

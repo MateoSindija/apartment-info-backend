@@ -8,6 +8,7 @@ import {
 } from 'sequelize-typescript';
 import { Apartment } from '@models/apartment';
 import { Sight } from '@models/sight';
+import { Device } from '@models/device';
 
 @Table({
     tableName: 'SightApartment',
@@ -21,4 +22,10 @@ export class SightApartment extends Model {
     @ForeignKey(() => Sight)
     @Column(DataType.UUID)
     declare sightId: string;
+
+    @BelongsTo(() => Apartment)
+    declare apartment: Apartment;
+
+    @BelongsTo(() => Sight)
+    declare sights: Sight;
 }

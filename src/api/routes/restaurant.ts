@@ -1,8 +1,6 @@
-import multer from 'multer';
 import { TokenRequest, userAuth } from '@api/middlewares/privateRoute';
 import { LoggerType } from '@loaders/logger';
 import Container from 'typedi';
-import { ImageUrlDTO } from '@interfaces/shop';
 import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import {
@@ -16,33 +14,8 @@ import {
     UpdateRestaurantDTO,
 } from '@interfaces/restaurant';
 import RestaurantService from '@services/restaurant';
-
+import { uploadImages } from '@utils/functions';
 const route = Router();
-
-const fileFilter = (req, file, cb) => {
-    if (
-        file.mimetype === 'image/jpeg' ||
-        file.mimetype === 'image/png' ||
-        file.mimetype === 'image/jpg' ||
-        file.mimetype === 'image/webp'
-    ) {
-        // If the image is either JPEG, PNG, WEBP or JPG
-        cb(null, true); // Allow the image
-    } else {
-        cb(
-            'Unsupported file extension. The image must be in JPEG or PNG format.',
-            false
-        ); // Reject the image
-    }
-};
-
-const upload = multer({
-    dest: 'public/uploads/restaurant',
-    limits: {
-        fileSize: 1024 * 1024 * 5, // 5 MB
-    },
-    fileFilter,
-}); // Set up multer for uploading
 
 export default (app: Router) => {
     app.use('/restaurant', route);
@@ -50,7 +23,7 @@ export default (app: Router) => {
     route.post(
         '/new',
         userAuth,
-        upload.array('images'),
+        uploadImages('public/uploads/restaurant').array('images'),
         validateRequestBody(NewRestaurantDTO),
         async (
             req: TokenRequest & {
@@ -61,7 +34,7 @@ export default (app: Router) => {
         ) => {
             const Logger: LoggerType = Container.get('logger');
             Logger.debug('Calling New Restaurant endpoint');
-            console.log(req.body);
+
             try {
                 const userID = req.decoded.id;
                 const restaurantServiceInstance =
@@ -110,10 +83,35 @@ export default (app: Router) => {
         }
     );
 
+    route.get(
+        '/:restaurantId',
+        validateRequestParams(ParamRestaurantUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get Beach endpoint');
+
+            try {
+                const restaurantId = req.params.restaurantId;
+
+                const restaurantServiceInstance =
+                    Container.get(RestaurantService);
+
+                const restaurant =
+                    await restaurantServiceInstance.GetRestaurantById(
+                        restaurantId
+                    );
+
+                res.status(200).json(restaurant);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
     route.post(
         '/:restaurantId/image',
         userAuth,
-        upload.array('image'),
+        uploadImages('public/uploads/restaurant').array('images'),
         validateRequestParams(ParamRestaurantUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
             const Logger: LoggerType = Container.get('logger');
@@ -145,8 +143,9 @@ export default (app: Router) => {
     route.patch(
         '/:restaurantId',
         userAuth,
-        validateRequestBody(UpdateRestaurantDTO),
+        uploadImages('public/uploads/restaurant').array('images'),
         validateRequestParams(ParamRestaurantUUID),
+        validateRequestBody(UpdateRestaurantDTO),
         async (
             req: TokenRequest & {
                 body: z.infer<typeof UpdateRestaurantDTO>;
@@ -170,7 +169,23 @@ export default (app: Router) => {
                     review,
                     reviewAmount,
                     titleImage,
+                    imagesUrlArray,
                 } = req.body;
+
+                let imagesPath: string[] | undefined = [];
+
+                if (req.files) {
+                    imagesPath = (req.files as Express.Multer.File[]).map(
+                        (file: Express.Multer.File) => file.path
+                    );
+
+                    if (
+                        typeof titleImage === 'number' &&
+                        titleImage >= imagesPath.length
+                    ) {
+                        throw new Error('Invalid titleImage chosen!');
+                    }
+                }
 
                 const restaurantServiceInstance =
                     Container.get(RestaurantService);
@@ -186,43 +201,9 @@ export default (app: Router) => {
                     review,
                     reviewAmount,
                     restaurantId,
-                    titleImage
-                );
-
-                res.status(200).end();
-            } catch (e) {
-                return next(e);
-            }
-        }
-    );
-
-    route.delete(
-        '/image/:restaurantId',
-        userAuth,
-        validateRequestBody(ImageUrlDTO),
-        validateRequestParams(ParamRestaurantUUID),
-        async (
-            req: TokenRequest & {
-                body: z.infer<typeof ImageUrlDTO>;
-            },
-            res: Response,
-            next: NextFunction
-        ) => {
-            const Logger: LoggerType = Container.get('logger');
-            Logger.debug('Calling Delete Restaurant endpoint');
-
-            try {
-                const restaurantId = req.params.restaurantId;
-                const userId = req.decoded.id;
-                const { imageUrl } = req.body;
-
-                const restaurantServiceInstance =
-                    Container.get(RestaurantService);
-
-                await restaurantServiceInstance.DeleteImage(
-                    restaurantId,
-                    userId,
-                    imageUrl
+                    titleImage,
+                    imagesPath,
+                    imagesUrlArray
                 );
 
                 res.status(200).end();

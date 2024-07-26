@@ -8,7 +8,13 @@ import {
     validateRequestParams,
 } from 'zod-express-middleware';
 import ApartmentService from '@services/apartment';
-import { NewApartmentDTO, ParamApartmentUUID } from '@interfaces/apartment';
+import {
+    NewAboutUsDTO,
+    NewApartmentDTO,
+    ParamApartmentUUID,
+    UpdateAboutUsDTO,
+} from '@interfaces/apartment';
+import { uploadImages } from '@utils/functions';
 
 const route = Router();
 
@@ -85,6 +91,31 @@ export default (app: Router): void => {
             }
         }
     );
+
+    route.get(
+        '/:apartmentId/reservations',
+        validateRequestParams(ParamApartmentUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get all reservations in apartment endpoint');
+
+            try {
+                const apartmentId = req.params.apartmentId;
+
+                const apartmentServiceInstance =
+                    Container.get(ApartmentService);
+
+                const beaches =
+                    await apartmentServiceInstance.GetReservationByApartment(
+                        apartmentId
+                    );
+
+                res.status(200).json(beaches);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
     route.get(
         '/:apartmentId/sights',
         validateRequestParams(ParamApartmentUUID),
@@ -128,6 +159,111 @@ export default (app: Router): void => {
                     );
 
                 res.status(200).json(devices);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+    route.get(
+        '/:apartmentId/aboutUs',
+        validateRequestParams(ParamApartmentUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get about us for apartment endpoint');
+
+            try {
+                const apartmentId = req.params.apartmentId;
+
+                const apartmentServiceInstance =
+                    Container.get(ApartmentService);
+
+                const aboutUs =
+                    await apartmentServiceInstance.GetAboutUs(apartmentId);
+
+                res.status(200).json(aboutUs);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+    route.post(
+        '/aboutUs',
+        userAuth,
+        uploadImages('public/uploads/aboutUs').array('images'),
+        validateRequestBody(NewAboutUsDTO),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling add about us for apartment endpoint');
+
+            try {
+                const { moto, aboutUs, titleImage, apartmentId } = req.body;
+
+                const imagesPath: string[] = (
+                    req.files as Express.Multer.File[]
+                ).map((file: Express.Multer.File) => file.path);
+
+                if (titleImage >= imagesPath.length) {
+                    throw new Error('Invalid titleImage chosen!');
+                }
+
+                const apartmentServiceInstance =
+                    Container.get(ApartmentService);
+
+                await apartmentServiceInstance.CreateAboutUs(
+                    apartmentId,
+                    moto,
+                    aboutUs,
+                    imagesPath,
+                    imagesPath[titleImage]
+                );
+
+                res.status(200);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+    route.patch(
+        '/:apartmentId/aboutUs',
+        userAuth,
+        uploadImages('public/uploads/aboutUs').array('images'),
+        validateRequestParams(ParamApartmentUUID),
+        validateRequestBody(UpdateAboutUsDTO),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling edit about us for apartment endpoint');
+
+            try {
+                const apartmentId = req.params.apartmentId;
+                const { moto, aboutUs, titleImage, imagesUrlArray } = req.body;
+                let imagesPath: string[] | undefined = [];
+
+                if (req.files) {
+                    imagesPath = (req.files as Express.Multer.File[]).map(
+                        (file: Express.Multer.File) => file.path
+                    );
+
+                    if (
+                        typeof titleImage === 'number' &&
+                        titleImage >= imagesPath.length
+                    ) {
+                        throw new Error('Invalid titleImage chosen!');
+                    }
+                }
+
+                const apartmentServiceInstance =
+                    Container.get(ApartmentService);
+
+                await apartmentServiceInstance.UpdateAboutUs(
+                    apartmentId,
+                    moto,
+                    aboutUs,
+                    imagesPath,
+                    titleImage,
+                    imagesUrlArray
+                );
+
+                res.status(200);
             } catch (e) {
                 return next(e);
             }

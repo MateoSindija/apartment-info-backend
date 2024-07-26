@@ -1,4 +1,3 @@
-import multer from 'multer';
 import { TokenRequest, userAuth } from '@api/middlewares/privateRoute';
 import { LoggerType } from '@loaders/logger';
 import Container from 'typedi';
@@ -15,32 +14,8 @@ import {
     validateRequestBody,
     validateRequestParams,
 } from 'zod-express-middleware';
+import { uploadImages } from '@utils/functions';
 const route = Router();
-
-const fileFilter = (req, file, cb) => {
-    if (
-        file.mimetype === 'image/jpeg' ||
-        file.mimetype === 'image/png' ||
-        file.mimetype === 'image/jpg' ||
-        file.mimetype === 'image/webp'
-    ) {
-        // If the image is either JPEG, PNG, WEBP or JPG
-        cb(null, true); // Allow the image
-    } else {
-        cb(
-            'Unsupported file extension. The image must be in JPEG or PNG format.',
-            false
-        ); // Reject the image
-    }
-};
-
-const upload = multer({
-    dest: 'public/uploads/shop',
-    limits: {
-        fileSize: 1024 * 1024 * 5, // 5 MB
-    },
-    fileFilter,
-}); // Set up multer for uploading
 
 export default (app: Router) => {
     app.use('/shop', route);
@@ -48,7 +23,7 @@ export default (app: Router) => {
     route.post(
         '/new',
         userAuth,
-        upload.array('images'),
+        uploadImages('public/uploads/shop').array('images'),
         validateRequestBody(NewShopDTO),
         async (
             req: TokenRequest & {
@@ -101,7 +76,7 @@ export default (app: Router) => {
     route.post(
         '/:shopId/image',
         userAuth,
-        upload.array('image'),
+        uploadImages('public/uploads/shop').array('images'),
         validateRequestParams(ParamShopUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
             const Logger: LoggerType = Container.get('logger');
@@ -132,8 +107,9 @@ export default (app: Router) => {
     route.patch(
         '/:shopId',
         userAuth,
-        validateRequestBody(UpdateShopDTO),
+        uploadImages('public/uploads/shop').array('images'),
         validateRequestParams(ParamShopUUID),
+        validateRequestBody(UpdateShopDTO),
         async (
             req: TokenRequest & {
                 body: z.infer<typeof UpdateShopDTO>;
@@ -147,7 +123,29 @@ export default (app: Router) => {
             try {
                 const shopId = req.params.shopId;
                 const userId = req.decoded.id;
-                const { title, description, lat, lng, titleImage } = req.body;
+                const {
+                    title,
+                    description,
+                    lat,
+                    lng,
+                    titleImage,
+                    imagesUrlArray,
+                } = req.body;
+
+                let imagesPath: string[] | undefined = [];
+
+                if (req.files) {
+                    imagesPath = (req.files as Express.Multer.File[]).map(
+                        (file: Express.Multer.File) => file.path
+                    );
+
+                    if (
+                        typeof titleImage === 'number' &&
+                        titleImage >= imagesPath.length
+                    ) {
+                        throw new Error('Invalid titleImage chosen!');
+                    }
+                }
 
                 const shopServiceInstance = Container.get(ShopService);
 
@@ -158,7 +156,9 @@ export default (app: Router) => {
                     lat,
                     lng,
                     shopId,
-                    titleImage
+                    titleImage,
+                    imagesPath,
+                    imagesUrlArray
                 );
 
                 res.status(200).end();
@@ -183,37 +183,6 @@ export default (app: Router) => {
                 const shop = await shopServiceInstance.GetShopById(shopId);
 
                 res.status(200).json(shop);
-            } catch (e) {
-                return next(e);
-            }
-        }
-    );
-
-    route.delete(
-        '/image/:shopId',
-        userAuth,
-        validateRequestBody(ImageUrlDTO),
-        validateRequestParams(ParamShopUUID),
-        async (
-            req: TokenRequest & {
-                body: z.infer<typeof ImageUrlDTO>;
-            },
-            res: Response,
-            next: NextFunction
-        ) => {
-            const Logger: LoggerType = Container.get('logger');
-            Logger.debug('Calling Delete Shop Image endpoint');
-
-            try {
-                const shopId = req.params.shopId;
-                const userId = req.decoded.id;
-                const { imageUrl } = req.body;
-
-                const shopServiceInstance = Container.get(ShopService);
-
-                await shopServiceInstance.DeleteImage(shopId, userId, imageUrl);
-
-                res.status(200).end();
             } catch (e) {
                 return next(e);
             }

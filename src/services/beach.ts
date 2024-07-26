@@ -2,26 +2,29 @@ import { Inject, Service } from 'typedi';
 import { LoggerType } from '@loaders/logger';
 import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
-import fs from 'fs';
 import { Beach } from '@models/beach';
-import { Sight } from '@models/sight';
 import { BeachApartment } from '@models/beachApartment';
+import {
+    deleteImage,
+    handleImageUrls,
+    handleTitleImage,
+} from '@utils/functions';
 
 @Service()
 export default class BeachService {
     constructor(@Inject('logger') private Logger: LoggerType) {}
 
-    public async GetBeachById(sightId: string): Promise<Sight> {
+    public async GetBeachById(beachId: string): Promise<Beach> {
         this.Logger.info('Getting beach!');
 
-        const sight = await Sight.findByPk(sightId);
+        const beach = await Beach.findByPk(beachId);
 
-        if (!sight) {
-            throw new Error('Sight not found');
+        if (!beach) {
+            throw new Error('Beach not found');
         }
 
-        this.Logger.info('Found sight!');
-        return sight;
+        this.Logger.info('Found Beach!');
+        return beach;
     }
     public async UpdateImage(
         beachId: string,
@@ -38,33 +41,6 @@ export default class BeachService {
         await beach.update({ imagesPath: imagesPath });
 
         this.Logger.info('Images updated');
-    }
-    public async DeleteImage(
-        beachId: string,
-        userId: string,
-        imagePath: string
-    ): Promise<void> {
-        this.Logger.info('Deleting files!');
-
-        const beach = await Beach.findByPk(beachId);
-        if (beach?.ownerId !== userId)
-            throw new ForbiddenError('You are not the owner of this object.');
-
-        if (beach) {
-            beach.imagesUrl = beach.imagesUrl.filter(
-                (url) => url !== imagePath
-            );
-            await beach.save();
-            await fs.unlink(imagePath, (err) => {
-                if (err) this.Logger.error(err);
-                else {
-                    this.Logger.info('File deleted');
-                }
-            });
-            this.Logger.info('Images updated');
-        }
-
-        this.Logger.info('Beach not found');
     }
     public async CreateBeach(
         title: string,
@@ -112,7 +88,9 @@ export default class BeachService {
         lng: number,
         terrainType: string,
         beachId: string,
-        titleImage: string
+        titleImage: string,
+        imagesPath: string[] | undefined,
+        imagesUrlArray: string[] | undefined
     ): Promise<void> {
         this.Logger.info('Updating Beach!');
 
@@ -120,13 +98,23 @@ export default class BeachService {
         if (beach?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
+        const existingImagesUrl = beach.imagesUrl || [];
+
+        const imagesToDelete = existingImagesUrl.filter(
+            (imageUrl) => !imagesUrlArray?.includes(imageUrl)
+        );
+        for (const imageUrl of imagesToDelete) {
+            await deleteImage(imageUrl);
+        }
+
         await Beach.update(
             {
                 title: title,
                 description: description,
                 terrainType: terrainType,
                 location: { type: 'Point', coordinates: [lng, lat] },
-                titleImage: titleImage,
+                imagesUrl: handleImageUrls(imagesPath, imagesUrlArray),
+                titleImage: handleTitleImage(titleImage, imagesPath),
             },
             { where: { beachId: beachId } }
         );
@@ -156,6 +144,9 @@ export default class BeachService {
         });
 
         if (beachCountInApartmentAttraction === 0) {
+            for (const imgPath of beach.imagesUrl) {
+                await deleteImage(imgPath);
+            }
             await beach.destroy();
         }
 

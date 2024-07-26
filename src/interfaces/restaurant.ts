@@ -16,8 +16,12 @@ export const UpdateRestaurantDTO = z.object({
     description: z.string().min(2).max(1000),
     lat: z.coerce.number().min(-90).max(90),
     lng: z.coerce.number().min(-90).max(90),
-    terrainType: z.string(),
-    titleImage: z.string(),
+    emailContact: z.string().email(),
+    phoneContact: z.string().min(3).max(50),
+    review: z.coerce.number().min(0).max(5),
+    reviewAmount: z.coerce.number().min(0),
+    titleImage: z.union([z.coerce.number().min(0), z.string()]),
+    imagesUrlArray: z.optional(z.array(z.string())),
 });
 
 export const ParamRestaurantUUID = z.object({

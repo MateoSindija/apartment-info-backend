@@ -27,7 +27,7 @@ export default ({ app }: { app: express.Application }): void => {
     app.use(PinoLogger);
 
     // Set a static folder
-    app.use(express.static('../../public/'));
+    app.use(express.static('public'));
 
     // Useful if you're behind a reverse proxy (Heroku, Bluemix, AWS ELB, Nginx, etc)
     // It shows the real origin IP in the heroku or Cloudwatch logs
@@ -62,6 +62,7 @@ export default ({ app }: { app: express.Application }): void => {
     });
 
     // Error handler
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     app.use((error: any, _req: Request, res: Response, _next: NextFunction) => {
         if (error && typeof error === 'object') {
             if (

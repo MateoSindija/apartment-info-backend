@@ -13,7 +13,6 @@ import {
 import { User } from '@models/user';
 import { BeachApartment } from '@models/beachApartment';
 import { Apartment } from '@models/apartment';
-import { RestaurantApartment } from '@models/restaurantApartment';
 
 @Table({
     tableName: 'Beaches',

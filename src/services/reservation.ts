@@ -3,54 +3,34 @@ import { LoggerType } from '@loaders/logger';
 import { Apartment } from '@models/apartment';
 import { Reservation } from '@models/reservation';
 import { ForbiddenError } from '@errors/appError';
+import { Op } from 'sequelize';
 
 @Service()
 export default class ReservationService {
     constructor(@Inject('logger') private Logger: LoggerType) {}
 
-    public async GetReservationByApartment(
-        apartmentId: string
-    ): Promise<Reservation[] | undefined> {
-        this.Logger.info('Getting Reservation periods for apartment!');
-
-        const apartmentWithReservation = await Apartment.findByPk(apartmentId, {
-            include: [{ model: Reservation, required: true }],
-        });
-
-        this.Logger.info('Found Reservation periods!');
-        return apartmentWithReservation?.reservations;
-    }
     public async CreateReservation(
         apartmentId: string,
         userId: string,
-        isRequestFromWebCheck: boolean,
         startDate: Date,
-        endDate: Date
+        endDate: Date,
+        clientName: string
     ): Promise<string> {
         this.Logger.info('Creating new reservation period!');
 
-        const apartmentWithReservations = await Apartment.findByPk(
-            apartmentId,
-            {
-                include: [{ model: Reservation, required: true }],
-            }
-        );
+        const conflictingReservation = await Reservation.findOne({
+            where: {
+                apartmentId,
+                [Op.or]: [
+                    {
+                        startDate: { [Op.lte]: endDate },
+                        endDate: { [Op.gte]: startDate },
+                    },
+                ],
+            },
+        });
 
-        if (
-            apartmentWithReservations?.ownerId !== userId &&
-            !isRequestFromWebCheck
-        ) {
-            throw new ForbiddenError('You dont have access to this apartment');
-        }
-
-        if (
-            apartmentWithReservations?.reservations.find(
-                (reservation) => reservation.startDate === startDate
-            ) ||
-            apartmentWithReservations?.reservations.find(
-                (reservation) => reservation.endDate === endDate
-            )
-        ) {
+        if (conflictingReservation) {
             throw new Error('Date is already occupied');
         }
 
@@ -58,37 +38,51 @@ export default class ReservationService {
             apartmentId: apartmentId,
             startDate: startDate,
             endDate: endDate,
+            clientName: clientName,
         });
         return reservation.reservationId;
     }
+    public async GetReservation(reservationId: string): Promise<Reservation> {
+        this.Logger.info('Get reservation period!');
+
+        const reservation = await Reservation.findByPk(reservationId);
+
+        if (!reservation) throw new Error('Reservation not found');
+
+        return reservation;
+    }
     public async UpdateReservation(
         reservationId: string,
+        apartmentId: string,
         userId: string,
         startDate: Date,
-        endDate: Date
+        endDate: Date,
+        clientName: string
     ): Promise<void> {
         this.Logger.info('Updating reservation period!');
 
-        const reservationWithOrganization = await Reservation.findByPk(
-            reservationId,
-            {
-                include: [
+        const conflictingReservation = await Reservation.findOne({
+            where: {
+                apartmentId,
+                reservationId: { [Op.ne]: reservationId }, // Exclude the current reservation
+                [Op.or]: [
                     {
-                        model: Apartment,
-                        required: true,
+                        startDate: { [Op.lte]: endDate },
+                        endDate: { [Op.gte]: startDate },
                     },
                 ],
-            }
-        );
+            },
+        });
 
-        if (reservationWithOrganization?.apartment.ownerId !== userId) {
-            throw new ForbiddenError('You dont have access to this apartment');
+        if (conflictingReservation) {
+            throw new Error('Date is already occupied');
         }
 
         await Reservation.update(
             {
                 startDate: startDate,
                 endDate: endDate,
+                clientName: clientName,
             },
             { where: { reservationId: reservationId } }
         );

@@ -1,5 +1,4 @@
 import {
-    BelongsTo,
     Column,
     DataType,
     ForeignKey,
@@ -22,9 +21,9 @@ export class BeachApartment extends Model {
     @Column(DataType.UUID)
     declare beachId: string;
 
-    @BelongsTo(() => Apartment)
-    declare apartment: Apartment;
-
-    @BelongsTo(() => Beach)
-    declare beach: Beach;
+    // @BelongsTo(() => Apartment)
+    // declare apartment: Apartment;
+    //
+    // @BelongsTo(() => Beach)
+    // declare beach: Beach;
 }

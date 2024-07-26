@@ -9,6 +9,7 @@ import {
     Table,
 } from 'sequelize-typescript';
 import { Apartment } from '@models/apartment';
+import { Reservation } from '@models/reservation';
 
 @Table({
     tableName: 'Reviews',
@@ -37,4 +38,14 @@ export class Review extends Model {
 
     @BelongsTo(() => Apartment)
     declare apartment: Apartment;
+
+    @Column({
+        type: DataType.UUID,
+        allowNull: false,
+    })
+    @ForeignKey(() => Reservation)
+    declare reservationId: string;
+
+    @BelongsTo(() => Reservation)
+    declare reservation: Reservation;
 }

@@ -21,4 +21,10 @@ export class ShopApartment extends Model {
     @ForeignKey(() => Shop)
     @Column(DataType.UUID)
     declare shopId: string;
+
+    @BelongsTo(() => Apartment)
+    declare apartment: Apartment;
+
+    @BelongsTo(() => Shop)
+    declare shop: Shop;
 }

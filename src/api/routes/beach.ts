@@ -1,8 +1,6 @@
-import multer from 'multer';
 import { TokenRequest, userAuth } from '@api/middlewares/privateRoute';
 import { LoggerType } from '@loaders/logger';
 import Container from 'typedi';
-import { ImageUrlDTO } from '@interfaces/shop';
 import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import {
@@ -11,33 +9,9 @@ import {
 } from 'zod-express-middleware';
 import { NewBeachDTO, ParamBeachUUID, UpdateBeachDTO } from '@interfaces/beach';
 import BeachService from '@services/beach';
+import { uploadImages } from '@utils/functions';
 
 const route = Router();
-
-const fileFilter = (req, file, cb) => {
-    if (
-        file.mimetype === 'image/jpeg' ||
-        file.mimetype === 'image/png' ||
-        file.mimetype === 'image/jpg' ||
-        file.mimetype === 'image/webp'
-    ) {
-        // If the image is either JPEG, PNG, WEBP or JPG
-        cb(null, true); // Allow the image
-    } else {
-        cb(
-            'Unsupported file extension. The image must be in JPEG or PNG format.',
-            false
-        ); // Reject the image
-    }
-};
-
-const upload = multer({
-    dest: 'public/uploads/beach',
-    limits: {
-        fileSize: 1024 * 1024 * 5, // 5 MB
-    },
-    fileFilter,
-}); // Set up multer for uploading
 
 export default (app: Router) => {
     app.use('/beach', route);
@@ -45,7 +19,7 @@ export default (app: Router) => {
     route.post(
         '/new',
         userAuth,
-        upload.array('images'),
+        uploadImages('public/uploads/beach').array('images'),
         validateRequestBody(NewBeachDTO),
         async (
             req: TokenRequest & {
@@ -100,7 +74,7 @@ export default (app: Router) => {
     route.post(
         '/:beachId/image',
         userAuth,
-        upload.array('image'),
+        uploadImages('public/uploads/beach').array('images'),
         validateRequestParams(ParamBeachUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
             const Logger: LoggerType = Container.get('logger');
@@ -142,7 +116,7 @@ export default (app: Router) => {
 
                 const beach = await beachServiceInstance.GetBeachById(beachId);
 
-                res.status(200).json({ beach });
+                res.status(200).json(beach);
             } catch (e) {
                 return next(e);
             }
@@ -152,8 +126,9 @@ export default (app: Router) => {
     route.patch(
         '/:beachId',
         userAuth,
-        validateRequestBody(UpdateBeachDTO),
+        uploadImages('public/uploads/beach').array('images'),
         validateRequestParams(ParamBeachUUID),
+        validateRequestBody(UpdateBeachDTO),
         async (
             req: TokenRequest & {
                 body: z.infer<typeof UpdateBeachDTO>;
@@ -174,7 +149,22 @@ export default (app: Router) => {
                     lng,
                     titleImage,
                     terrainType,
+                    imagesUrlArray,
                 } = req.body;
+                let imagesPath: string[] | undefined = [];
+
+                if (req.files) {
+                    imagesPath = (req.files as Express.Multer.File[]).map(
+                        (file: Express.Multer.File) => file.path
+                    );
+
+                    if (
+                        typeof titleImage === 'number' &&
+                        titleImage >= imagesPath.length
+                    ) {
+                        throw new Error('Invalid titleImage chosen!');
+                    }
+                }
 
                 const beachServiceInstance = Container.get(BeachService);
 
@@ -186,42 +176,9 @@ export default (app: Router) => {
                     lng,
                     terrainType,
                     beachId,
-                    titleImage
-                );
-
-                res.status(200).end();
-            } catch (e) {
-                return next(e);
-            }
-        }
-    );
-
-    route.delete(
-        '/image/:beachId',
-        userAuth,
-        validateRequestBody(ImageUrlDTO),
-        validateRequestParams(ParamBeachUUID),
-        async (
-            req: TokenRequest & {
-                body: z.infer<typeof ImageUrlDTO>;
-            },
-            res: Response,
-            next: NextFunction
-        ) => {
-            const Logger: LoggerType = Container.get('logger');
-            Logger.debug('Calling Delete Image endpoint');
-
-            try {
-                const beachId = req.params.beachId;
-                const userId = req.decoded.id;
-                const { imageUrl } = req.body;
-
-                const beachServiceInstance = Container.get(BeachService);
-
-                await beachServiceInstance.DeleteImage(
-                    beachId,
-                    userId,
-                    imageUrl
+                    titleImage,
+                    imagesPath,
+                    imagesUrlArray
                 );
 
                 res.status(200).end();

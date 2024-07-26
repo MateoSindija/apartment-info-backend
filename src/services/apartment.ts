@@ -7,14 +7,23 @@ import { Device } from '@models/device';
 import { Restaurant } from '@models/restaurant';
 import { Shop } from '@models/shop';
 import { Review } from '@models/review';
-import { BeachApartment } from '@models/beachApartment';
-import { ShopApartment } from '@models/shopApartment';
-import { DeviceApartment } from '@models/deviceApartment';
-import { RestaurantApartment } from '@models/restaurantApartment';
+import { AboutUs } from '@models/aboutUs';
+import { handleImageUrls, handleTitleImage } from '@utils/functions';
+import { Reservation } from '@models/reservation';
 
 @Service()
 export default class ApartmentService {
     constructor(@Inject('logger') private Logger: LoggerType) {}
+
+    public async GetReservationByApartment(
+        apartmentId: string
+    ): Promise<Reservation[]> {
+        this.Logger.info('Getting Reservation periods for apartment!');
+
+        return await Reservation.findAll({
+            where: { apartmentId: apartmentId },
+        });
+    }
 
     public async GetAllUserApartments(userId: string): Promise<Apartment[]> {
         this.Logger.info('Getting all user apartments!');
@@ -136,6 +145,57 @@ export default class ApartmentService {
 
         this.Logger.info('Found all reviews!');
         return reviews;
+    }
+
+    public async GetAboutUs(apartmentId: string): Promise<AboutUs | null> {
+        this.Logger.info('Getting about us for apartment!');
+
+        const aboutUs = await AboutUs.findByPk(apartmentId);
+
+        this.Logger.info('Found about us!');
+        return aboutUs;
+    }
+
+    public async CreateAboutUs(
+        apartmentId: string,
+        moto: string,
+        aboutUs: string,
+        imagesUrl: string[],
+        titleImage: string
+    ): Promise<void> {
+        this.Logger.info('Creating about us for apartment!');
+
+        await AboutUs.create({
+            apartmentId: apartmentId,
+            moto: moto,
+            aboutUs: aboutUs,
+            imagesUrl: imagesUrl,
+            titleImage: titleImage,
+        });
+
+        this.Logger.info('Created about us!');
+    }
+    public async UpdateAboutUs(
+        apartmentId: string,
+        moto: string,
+        aboutUs: string,
+        imagesPath: string[] | undefined,
+        titleImage: string,
+        imagesUrlArray: string[] | undefined
+    ): Promise<void> {
+        this.Logger.info('Creating about us for apartment!');
+
+        await AboutUs.update(
+            {
+                moto: moto,
+                aboutUs: aboutUs,
+                imagesUrl: handleImageUrls(imagesPath, imagesUrlArray),
+                titleImage: handleTitleImage(titleImage, imagesPath),
+            },
+            { where: { apartmentId: apartmentId } }
+        );
+
+        this.Logger.info('Updated about us!');
     }
     public async CreateApartment(
         name: string,

@@ -5,33 +5,31 @@ const schema = process.env.DEV_POSTGRES_SCHEMA || 'public';
 module.exports = {
     async up(queryInterface) {
         await queryInterface.createTable(
+            { schema: schema, tableName: 'AboutUs' },
             {
-                schema: schema,
-                tableName: 'Messages',
-            },
-            {
-                messageId: {
+                apartmentId: {
                     allowNull: false,
+                    foreignKey: true,
                     primaryKey: true,
-                    defaultValue: DataType.UUIDV4,
                     type: DataType.UUID,
                 },
-                creatorId: {
-                    foreignKey: true,
-                    type: DataType.UUID,
+                aboutUs: {
+                    type: DataType.STRING(1000),
                 },
-                recipientId: {
-                    foreignKey: true,
-                    type: DataType.UUID,
+                moto: {
+                    type: DataType.STRING(100),
                 },
-                messageBody: {
+                titleImage: {
                     type: DataType.STRING,
                 },
-                isRead: {
-                    defaultValue: false,
-                    type: DataType.BOOLEAN,
+                imagesUrl: {
+                    type: DataType.ARRAY(DataType.STRING),
                 },
                 createdAt: {
+                    allowNull: false,
+                    type: DataType.DATE,
+                },
+                updatedAt: {
                     allowNull: false,
                     type: DataType.DATE,
                 },
@@ -42,7 +40,7 @@ module.exports = {
     async down(queryInterface) {
         await queryInterface.dropTable({
             schema: schema,
-            tableName: 'Messages',
+            tableName: 'AboutUs',
         });
     },
 };

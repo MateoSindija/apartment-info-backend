@@ -9,8 +9,8 @@ export const NewDeviceDTO = z.object({
 export const UpdateDeviceDTO = z.object({
     title: z.string().min(2).max(50),
     description: z.string().min(2).max(1000),
-    imagesUrl: z.array(z.string().url()),
-    titleImage: z.string(),
+    titleImage: z.union([z.coerce.number().min(0), z.string()]),
+    imagesUrlArray: z.optional(z.array(z.string())),
 });
 
 export const ParamDeviceUUID = z.object({

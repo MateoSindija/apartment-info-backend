@@ -2,9 +2,13 @@ import { Inject, Service } from 'typedi';
 import { LoggerType } from '@loaders/logger';
 import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
-import fs from 'fs';
 import { Device } from '@models/device';
 import { DeviceApartment } from '@models/deviceApartment';
+import {
+    deleteImage,
+    handleImageUrls,
+    handleTitleImage,
+} from '@utils/functions';
 
 @Service()
 export default class DeviceService {
@@ -37,33 +41,7 @@ export default class DeviceService {
 
         this.Logger.info('Images updated');
     }
-    public async DeleteImage(
-        deviceId: string,
-        userId: string,
-        imagePath: string
-    ): Promise<void> {
-        this.Logger.info('Deleting files!');
 
-        const device = await Device.findByPk(deviceId);
-        if (device?.ownerId !== userId)
-            throw new ForbiddenError('You are not the owner of this object.');
-
-        if (device) {
-            device.imagesUrl = device.imagesUrl.filter(
-                (url) => url !== imagePath
-            );
-            await device.save();
-            await fs.unlink(imagePath, (err) => {
-                if (err) this.Logger.error(err);
-                else {
-                    this.Logger.info('File deleted');
-                }
-            });
-            this.Logger.info('Images updated');
-        }
-
-        this.Logger.info('Beach not found');
-    }
     public async CreateDevice(
         title: string,
         description: string,
@@ -103,7 +81,9 @@ export default class DeviceService {
         description: string,
         deviceId: string,
         titleImage: string,
-        userId: string
+        userId: string,
+        imagesPath: string[] | undefined,
+        imagesUrlArray: string[] | undefined
     ): Promise<void> {
         this.Logger.info('Updating Beach!');
 
@@ -111,11 +91,21 @@ export default class DeviceService {
         if (device?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this device.');
 
+        const existingImagesUrl = device.imagesUrl || [];
+
+        const imagesToDelete = existingImagesUrl.filter(
+            (imageUrl) => !imagesUrlArray?.includes(imageUrl)
+        );
+        for (const imageUrl of imagesToDelete) {
+            await deleteImage(imageUrl);
+        }
+
         await Device.update(
             {
                 title: title,
                 description: description,
-                titleImage: titleImage,
+                imagesUrl: handleImageUrls(imagesPath, imagesUrlArray),
+                titleImage: handleTitleImage(titleImage, imagesPath),
             },
             { where: { deviceId: deviceId } }
         );
@@ -147,6 +137,9 @@ export default class DeviceService {
         });
 
         if (deviceCountInApartmentAttraction === 0) {
+            for (const imgPath of device.imagesUrl) {
+                await deleteImage(imgPath);
+            }
             await device.destroy();
         }
 

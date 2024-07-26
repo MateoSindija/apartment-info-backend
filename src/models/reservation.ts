@@ -1,5 +1,4 @@
 import {
-    AllowNull,
     BelongsTo,
     Column,
     DataType,
@@ -10,8 +9,8 @@ import {
     PrimaryKey,
     Table,
 } from 'sequelize-typescript';
-import { User } from '@models/user';
 import { Apartment } from '@models/apartment';
+import { Review } from '@models/review';
 
 @Table({
     tableName: 'Reservations',
@@ -28,18 +27,16 @@ export class Reservation extends Model {
     @Column(DataType.DATE)
     declare endDate: Date;
 
+    @Column(DataType.STRING)
+    declare clientName: string;
+
     @Column(DataType.UUID)
     @ForeignKey(() => Apartment)
     declare apartmentId: string;
 
-    // @AllowNull
-    // @Column(DataType.UUID)
-    // @ForeignKey(() => User)
-    // declare userId: string;
-    //
-    // @HasMany(() => User)
-    // declare workers: User[];
-
     @BelongsTo(() => Apartment)
     declare apartment: Apartment;
+
+    @HasMany(() => Review)
+    declare reviews: Review[];
 }

@@ -9,9 +9,11 @@ import {
     Table,
 } from 'sequelize-typescript';
 import { User } from '@models/user';
+import { Apartment } from '@models/apartment';
 
 @Table({
     tableName: 'Messages',
+    timestamps: false,
 })
 export class Message extends Model {
     @PrimaryKey
@@ -20,18 +22,21 @@ export class Message extends Model {
     declare messageId: string;
 
     @Column
-    @ForeignKey(() => User)
-    declare creatorId: string;
+    @ForeignKey(() => Apartment)
+    declare apartmentId: string;
 
-    @BelongsTo(() => User)
-    declare creator: User;
+    @BelongsTo(() => Apartment)
+    declare apartment: Apartment;
 
     @Column
     @ForeignKey(() => User)
-    declare recipientId: string;
+    declare userId: string;
+
+    @Column(DataType.UUID)
+    declare senderId: string;
 
     @BelongsTo(() => User)
-    declare recipient: User;
+    declare user: User;
 
     @Default(false)
     @Column(DataType.BOOLEAN)
@@ -39,4 +44,7 @@ export class Message extends Model {
 
     @Column(DataType.STRING)
     declare messageBody: string;
+
+    @Column(DataType.DATE)
+    declare createdAt: Date;
 }

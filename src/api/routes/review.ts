@@ -34,7 +34,7 @@ export default (app: Router) => {
                     apartmentId,
                 } = req.body;
 
-                const reviewId = await reviewServiceInstance.CreateReview(
+                const newReview = await reviewServiceInstance.CreateReview(
                     comfortRating,
                     experienceRating,
                     valueRating,
@@ -42,7 +42,50 @@ export default (app: Router) => {
                     apartmentId
                 );
 
-                res.status(200).json({ reviewId });
+                res.status(200).json(newReview);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+    route.get(
+        '/:apartmentId',
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling get reviews endpoint');
+            try {
+                const reviewServiceInstance = Container.get(ReviewService);
+                const apartmentId = req.params.apartmentId;
+
+                const reviews =
+                    await reviewServiceInstance.GetReviewsByApartmentId(
+                        apartmentId
+                    );
+
+                res.status(200).json(reviews);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.get(
+        '/:apartmentId/status',
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling check if  review already exists endpoint');
+            try {
+                const reviewServiceInstance = Container.get(ReviewService);
+                const apartmentId = req.params.apartmentId;
+
+                const doesReviewExists =
+                    await reviewServiceInstance.CheckIfReviewExistsForCurrentPeriod(
+                        apartmentId
+                    );
+
+                res.status(200).json({
+                    isReviewAlreadySubmitted: doesReviewExists,
+                });
             } catch (e) {
                 return next(e);
             }

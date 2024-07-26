@@ -3,8 +3,12 @@ import { LoggerType } from '@loaders/logger';
 import { Shop } from '@models/shop';
 import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
-import fs from 'fs';
 import { ShopApartment } from '@models/shopApartment';
+import {
+    deleteImage,
+    handleImageUrls,
+    handleTitleImage,
+} from '@utils/functions';
 @Service()
 export default class ShopService {
     constructor(@Inject('logger') private Logger: LoggerType) {}
@@ -36,31 +40,7 @@ export default class ShopService {
 
         this.Logger.info('Images updated');
     }
-    public async DeleteImage(
-        shopId: string,
-        userId: string,
-        imagePath: string
-    ): Promise<void> {
-        this.Logger.info('Deleting files!');
 
-        const shop = await Shop.findByPk(shopId);
-        if (shop?.ownerId !== userId)
-            throw new ForbiddenError('You are not the owner of this object.');
-
-        if (shop) {
-            shop.imagesUrl = shop.imagesUrl.filter((url) => url !== imagePath);
-            await shop.save();
-            await fs.unlink(imagePath, (err) => {
-                if (err) this.Logger.error(err);
-                else {
-                    this.Logger.info('File deleted');
-                }
-            });
-            this.Logger.info('Images updated');
-        }
-
-        this.Logger.info('Shop not found');
-    }
     public async CreateShop(
         title: string,
         description: string,
@@ -105,7 +85,9 @@ export default class ShopService {
         lat: number,
         lng: number,
         shopId: string,
-        titleImage: string
+        titleImage: string,
+        imagesPath: string[] | undefined,
+        imagesUrlArray: string[] | undefined
     ): Promise<void> {
         this.Logger.info('Updating shop!');
 
@@ -113,12 +95,22 @@ export default class ShopService {
         if (shop?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
+        const existingImagesUrl = shop.imagesUrl || [];
+
+        const imagesToDelete = existingImagesUrl.filter(
+            (imageUrl) => !imagesUrlArray?.includes(imageUrl)
+        );
+        for (const imageUrl of imagesToDelete) {
+            await deleteImage(imageUrl);
+        }
+
         await Shop.update(
             {
                 title: title,
                 description: description,
                 location: { type: 'Point', coordinates: [lng, lat] },
-                titleImage: titleImage,
+                imagesUrl: handleImageUrls(imagesPath, imagesUrlArray),
+                titleImage: handleTitleImage(titleImage, imagesPath),
             },
             { where: { shopId: shopId } }
         );
@@ -151,6 +143,9 @@ export default class ShopService {
         });
 
         if (shopCountInApartmentAttraction === 0) {
+            for (const imgPath of shop.imagesUrl) {
+                await deleteImage(imgPath);
+            }
             await shop.destroy();
         }
 

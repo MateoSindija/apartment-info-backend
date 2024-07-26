@@ -5,6 +5,11 @@ import { Apartment } from '@models/apartment';
 import fs from 'fs';
 import { Sight } from '@models/sight';
 import { SightApartment } from '@models/sightApartment';
+import {
+    deleteImage,
+    handleImageUrls,
+    handleTitleImage,
+} from '@utils/functions';
 
 @Service()
 export default class SightService {
@@ -110,7 +115,9 @@ export default class SightService {
         lat: number,
         lng: number,
         sightId: string,
-        titleImage: string
+        titleImage: string,
+        imagesPath: string[] | undefined,
+        imagesUrlArray: string[] | undefined
     ): Promise<void> {
         this.Logger.info('Updating Sight!');
 
@@ -118,12 +125,22 @@ export default class SightService {
         if (sight?.ownerId !== userId)
             throw new ForbiddenError('You are not the owner of this object.');
 
+        const existingImagesUrl = sight.imagesUrl || [];
+
+        const imagesToDelete = existingImagesUrl.filter(
+            (imageUrl) => !imagesUrlArray?.includes(imageUrl)
+        );
+        for (const imageUrl of imagesToDelete) {
+            await deleteImage(imageUrl);
+        }
+
         await Sight.update(
             {
                 title: title,
                 description: description,
                 location: { type: 'Point', coordinates: [lng, lat] },
-                titleImage: titleImage,
+                imagesUrl: handleImageUrls(imagesPath, imagesUrlArray),
+                titleImage: handleTitleImage(titleImage, imagesPath),
             },
             { where: { sightId: sightId } }
         );
@@ -157,6 +174,9 @@ export default class SightService {
         });
 
         if (sightCountInApartmentAttraction === 0) {
+            for (const imgPath of sight.imagesUrl) {
+                await deleteImage(imgPath);
+            }
             await sight.destroy();
         }
 

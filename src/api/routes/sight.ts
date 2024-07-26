@@ -1,4 +1,3 @@
-import multer from 'multer';
 import { TokenRequest, userAuth } from '@api/middlewares/privateRoute';
 import { LoggerType } from '@loaders/logger';
 import Container from 'typedi';
@@ -11,33 +10,9 @@ import {
 } from 'zod-express-middleware';
 import { NewSightDTO, ParamSightUUID, UpdateSightDTO } from '@interfaces/sight';
 import SightService from '@services/sights';
+import { uploadImages } from '@utils/functions';
 
 const route = Router();
-
-const fileFilter = (req, file, cb) => {
-    if (
-        file.mimetype === 'image/jpeg' ||
-        file.mimetype === 'image/png' ||
-        file.mimetype === 'image/jpg' ||
-        file.mimetype === 'image/webp'
-    ) {
-        // If the image is either JPEG, PNG, WEBP or JPG
-        cb(null, true); // Allow the image
-    } else {
-        cb(
-            'Unsupported file extension. The image must be in JPEG or PNG format.',
-            false
-        ); // Reject the image
-    }
-};
-
-const upload = multer({
-    dest: 'public/uploads/sight',
-    limits: {
-        fileSize: 1024 * 1024 * 5, // 5 MB
-    },
-    fileFilter,
-}); // Set up multer for uploading
 
 export default (app: Router) => {
     app.use('/sight', route);
@@ -45,7 +20,7 @@ export default (app: Router) => {
     route.post(
         '/new',
         userAuth,
-        upload.array('images'),
+        uploadImages('public/uploads/sight').array('images'),
         validateRequestBody(NewSightDTO),
         async (
             req: TokenRequest & {
@@ -97,7 +72,7 @@ export default (app: Router) => {
     route.post(
         '/:sightId/image',
         userAuth,
-        upload.array('image'),
+        uploadImages('public/uploads/sight').array('images'),
         validateRequestParams(ParamSightUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
             const Logger: LoggerType = Container.get('logger');
@@ -128,8 +103,9 @@ export default (app: Router) => {
     route.patch(
         '/:sightId',
         userAuth,
-        validateRequestBody(UpdateSightDTO),
+        uploadImages('public/uploads/sight').array('images'),
         validateRequestParams(ParamSightUUID),
+        validateRequestBody(UpdateSightDTO),
         async (
             req: TokenRequest & {
                 body: z.infer<typeof UpdateSightDTO>;
@@ -143,7 +119,29 @@ export default (app: Router) => {
             try {
                 const sightId = req.params.sightId;
                 const userId = req.decoded.id;
-                const { title, description, lat, lng, titleImage } = req.body;
+                const {
+                    title,
+                    description,
+                    lat,
+                    lng,
+                    titleImage,
+                    imagesUrlArray,
+                } = req.body;
+
+                let imagesPath: string[] | undefined = [];
+
+                if (req.files) {
+                    imagesPath = (req.files as Express.Multer.File[]).map(
+                        (file: Express.Multer.File) => file.path
+                    );
+
+                    if (
+                        typeof titleImage === 'number' &&
+                        titleImage >= imagesPath.length
+                    ) {
+                        throw new Error('Invalid titleImage chosen!');
+                    }
+                }
 
                 const sightServiceInstance = Container.get(SightService);
 
@@ -154,7 +152,9 @@ export default (app: Router) => {
                     lat,
                     lng,
                     sightId,
-                    titleImage
+                    titleImage,
+                    imagesPath,
+                    imagesUrlArray
                 );
 
                 res.status(200).end();

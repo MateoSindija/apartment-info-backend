@@ -5,11 +5,13 @@ import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import {
     validateRequestBody,
+    validateRequestParams,
     validateRequestQuery,
 } from 'zod-express-middleware';
 import {
     NewReservationDTO,
     ReservationParamsUUID,
+    UpdateReservationDTO,
 } from '@interfaces/reservation';
 import ReservationService from '@services/reservation';
 
@@ -35,14 +37,15 @@ export default (app: Router) => {
                 const userId = req.decoded.id;
                 const reservationServiceInstance =
                     Container.get(ReservationService);
-                const { startDate, endDate, apartmentId } = req.body;
+                const { startDate, endDate, apartmentId, clientName } =
+                    req.body;
                 const reservationId =
                     await reservationServiceInstance.CreateReservation(
                         apartmentId,
                         userId,
-                        false,
                         startDate,
-                        endDate
+                        endDate,
+                        clientName
                     );
 
                 res.status(200).json({ reservationId });
@@ -52,14 +55,39 @@ export default (app: Router) => {
         }
     );
 
+    route.get(
+        '/:reservationId',
+        userAuth,
+        validateRequestParams(ReservationParamsUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get Reservation by id endpoint');
+            try {
+                const reservationId = req.params.reservationId;
+
+                const reservationServiceInstance =
+                    Container.get(ReservationService);
+
+                const reservation =
+                    await reservationServiceInstance.GetReservation(
+                        reservationId
+                    );
+
+                res.status(200).json(reservation);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
     route.patch(
         '/:reservationId',
         userAuth,
-        validateRequestBody(NewReservationDTO),
-        validateRequestQuery(ReservationParamsUUID),
+        validateRequestBody(UpdateReservationDTO),
+        validateRequestParams(ReservationParamsUUID),
         async (
             req: TokenRequest & {
-                body: z.infer<typeof NewReservationDTO>;
+                body: z.infer<typeof UpdateReservationDTO>;
             },
             res: Response,
             next: NextFunction
@@ -70,16 +98,19 @@ export default (app: Router) => {
             try {
                 const reservationId = req.params.reservationId;
                 const userId = req.decoded.id;
-                const { startDate, endDate } = req.body;
+                const { startDate, endDate, clientName, apartmentId } =
+                    req.body;
 
                 const reservationServiceInstance =
                     Container.get(ReservationService);
 
                 await reservationServiceInstance.UpdateReservation(
                     reservationId,
+                    apartmentId,
                     userId,
                     startDate,
-                    endDate
+                    endDate,
+                    clientName
                 );
 
                 res.status(200).end();
@@ -92,7 +123,7 @@ export default (app: Router) => {
     route.delete(
         '/:reservationId',
         userAuth,
-        validateRequestQuery(ReservationParamsUUID),
+        validateRequestParams(ReservationParamsUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
             const Logger: LoggerType = Container.get('logger');
             Logger.debug('Calling Delete Reservation endpoint');

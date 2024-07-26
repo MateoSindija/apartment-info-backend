@@ -13,7 +13,8 @@ export const UpdateShopDTO = z.object({
     description: z.string().min(2).max(1000),
     lat: z.coerce.number(),
     lng: z.coerce.number(),
-    titleImage: z.string(),
+    titleImage: z.union([z.coerce.number().min(0), z.string()]),
+    imagesUrlArray: z.optional(z.array(z.string())),
 });
 
 export const ParamShopUUID = z.object({

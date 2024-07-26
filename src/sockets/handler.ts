@@ -1,10 +1,9 @@
 import { Server as HttpServer } from 'http';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import config from '@config/config';
 import { ForbiddenError } from '@errors/appError';
 import Logger from '@loaders/logger';
-import { Socket } from 'socket.io';
 import Container from 'typedi';
 import MessageService from '@services/message';
 
@@ -52,18 +51,36 @@ const SocketHandler = {
                     socket?.data?.decoded?.id ?? 'Anonymous'
             );
 
-            socket.on('joinRoom', async (data) => {
-                const room = generateRoomName(data.creatorId, data.recieverId);
-                socket.join(room);
-                Logger.info(`User joined ${socket.id} joined room ${room}`);
-                const messageServiceInstance = Container.get(MessageService);
-                await messageServiceInstance.UpdateIsRead(data.clientId);
+            socket.on(
+                'joinRoom',
+                async ({
+                    reservationId,
+                    userId,
+                }: {
+                    reservationId: string;
+                    userId: string;
+                }) => {
+                    socket.join(reservationId);
+                    Logger.info(
+                        `User joined ${socket.id} joined room ${reservationId}`
+                    );
+                    const messageServiceInstance =
+                        Container.get(MessageService);
 
-                return await messageServiceInstance.GetMessages(
-                    data.recieverId,
-                    data.creatorId
-                );
-            });
+                    await messageServiceInstance.UpdateIsRead(
+                        userId,
+                        reservationId
+                    );
+
+                    const messages =
+                        await messageServiceInstance.GetMessagesByReservationId(
+                            reservationId,
+                            userId
+                        );
+
+                    socket.emit('messages', messages);
+                }
+            );
 
             socket.on('publicKey', (data) => {
                 socket.to(data.receiverId).emit('publicKey', {
@@ -73,16 +90,23 @@ const SocketHandler = {
             });
 
             socket.on('message', async (data) => {
-                const { creatorId, recipientId, message } = data;
-                const room = generateRoomName(creatorId, recipientId);
-                io.to(room).emit('message', { message: message });
+                const {
+                    userId,
+                    messageBody,
+                    apartmentId,
+                    reservationId,
+                    senderId,
+                } = data;
                 const messageServiceInstance = Container.get(MessageService);
 
-                await messageServiceInstance.AddMessage(
-                    recipientId,
-                    creatorId,
-                    message
+                const message = await messageServiceInstance.AddMessage(
+                    apartmentId,
+                    userId,
+                    senderId,
+                    messageBody
                 );
+
+                io.to(reservationId).emit('new-message', message);
             });
 
             socket.on('disconnect', () => {
@@ -101,8 +125,5 @@ const SocketHandler = {
         socketRef.to(to).emit(action, payload);
     },
 };
-function generateRoomName(creatorId, receiverId): string {
-    return [creatorId, receiverId].sort().join('-');
-}
 
 export { SocketHandler, socketRef };
