@@ -1,5 +1,6 @@
 import {
     InitPasswordResetDTO,
+    LoginApartmentDTO,
     LoginDTO,
     PasswordResetBodyDTO,
     PasswordResetQueryDTO,
@@ -56,6 +57,28 @@ export default (app: Router) => {
                 const authServiceInstance = Container.get(AuthService);
                 const info = await authServiceInstance.Login(
                     req.body.email,
+                    req.body.password
+                );
+                return res.json(info).status(StatusCodes.OK);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.post(
+        '/login/apartment',
+        validateRequestBody(LoginApartmentDTO),
+        async (req, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug(
+                'Calling Sign-In apartment endpoint with body: %o',
+                req.body
+            );
+            try {
+                const authServiceInstance = Container.get(AuthService);
+                const info = await authServiceInstance.LoginApartment(
+                    req.body.apartmentId,
                     req.body.password
                 );
                 return res.json(info).status(StatusCodes.OK);

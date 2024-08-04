@@ -10,6 +10,7 @@ import { randomUUID } from 'crypto';
 import { CommonErrors } from '@errors/common';
 import { StatusCodes } from 'http-status-codes';
 import { BaseError } from 'sequelize';
+import { Apartment } from '@models/apartment';
 
 @Service()
 export default class AuthService {
@@ -105,6 +106,44 @@ export default class AuthService {
             throw e;
         }
     }
+    public async LoginApartment(
+        apartmentId: string,
+        password: string
+    ): Promise<{
+        token: string;
+        type: string;
+        ownerId: string;
+        apartmentId: string;
+    }> {
+        try {
+            const apartment = await Apartment.findOne({
+                where: {
+                    apartmentId: apartmentId,
+                    apartmentPassword: password,
+                },
+            });
+
+            if (!apartment) throw new Error("Apartment doesn't exists");
+
+            const loginKey = randomUUID();
+
+            const accessToken = await this.generateToken(
+                apartmentId,
+                loginKey as string,
+                'apartment'
+            );
+
+            return {
+                token: accessToken,
+                type: 'apartment',
+                ownerId: apartment.ownerId,
+                apartmentId: apartment.apartmentId,
+            };
+        } catch (e) {
+            this.Logger.error(e);
+            throw e;
+        }
+    }
 
     public async InitResetPassword(email: string): Promise<void> {
         try {
@@ -178,7 +217,7 @@ export default class AuthService {
     private async generateToken(
         userID: string,
         loginKey: string,
-        type: 'user',
+        type: 'user' | 'apartment',
         objectID?: string
     ): Promise<string> {
         const today = new Date();

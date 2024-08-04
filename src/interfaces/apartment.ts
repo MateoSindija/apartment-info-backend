@@ -5,6 +5,7 @@ export const NewApartmentDTO = z.object({
     address: z.string().min(2).max(80),
     lat: z.coerce.number(),
     lng: z.coerce.number(),
+    apartmentPassword: z.string().min(5).max(50),
 });
 export const NewAboutUsDTO = z.object({
     moto: z.string().min(2).max(100),

@@ -15,6 +15,13 @@ import {
 } from '@interfaces/restaurant';
 import RestaurantService from '@services/restaurant';
 import { uploadImages } from '@utils/functions';
+import { ParamApartmentUUID } from '@interfaces/apartment';
+import AttractionsFromOwnerService from '@services/attractionsFromOwner';
+import { Beach } from '@models/beach';
+import { Restaurant } from '@models/restaurant';
+import { ParamExistingDeviceUUID } from '@interfaces/device';
+import { BeachApartment } from '@models/beachApartment';
+import { RestaurantApartment } from '@models/restaurantApartment';
 const route = Router();
 
 export default (app: Router) => {
@@ -83,6 +90,33 @@ export default (app: Router) => {
         }
     );
 
+    route.post(
+        '/:attractionId/existing/:apartmentId',
+        userAuth,
+        validateRequestParams(ParamExistingDeviceUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling add existing Restaurant endpoint endpoint');
+            try {
+                const attractionId = req.params.attractionId;
+                const apartmentId = req.params.apartmentId;
+
+                const attractionFromOwnerServiceInstance = Container.get(
+                    AttractionsFromOwnerService
+                );
+
+                await attractionFromOwnerServiceInstance.AddExistingAttractionToApartment(
+                    RestaurantApartment,
+                    { restaurantId: attractionId, apartmentId: apartmentId }
+                );
+
+                res.status(200).end();
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
     route.get(
         '/:restaurantId',
         validateRequestParams(ParamRestaurantUUID),
@@ -102,6 +136,38 @@ export default (app: Router) => {
                     );
 
                 res.status(200).json(restaurant);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.get(
+        '/:apartmentId/list',
+        userAuth,
+        validateRequestParams(ParamApartmentUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get all Restaurants from owner endpoint');
+
+            try {
+                const userID = req.decoded.id;
+                const apartmentId = req.params.apartmentId;
+
+                const attractionFromOwnerServiceInstance = Container.get(
+                    AttractionsFromOwnerService
+                );
+
+                const restaurants =
+                    await attractionFromOwnerServiceInstance.GetAttractionsFromOtherApartments(
+                        userID,
+                        apartmentId,
+                        Restaurant,
+                        'restaurants',
+                        'restaurantId'
+                    );
+
+                res.status(200).json(restaurants);
             } catch (e) {
                 return next(e);
             }

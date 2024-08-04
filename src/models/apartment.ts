@@ -41,6 +41,9 @@ export class Apartment extends Model {
     @Column(DataType.STRING(80))
     declare address: string;
 
+    @Column(DataType.STRING)
+    declare apartmentPassword: string;
+
     @Column(DataType.GEOGRAPHY('Point'))
     declare location: number;
 

@@ -1,4 +1,5 @@
 import {
+    BelongsTo,
     Column,
     DataType,
     ForeignKey,
@@ -23,7 +24,7 @@ export class BeachApartment extends Model {
 
     // @BelongsTo(() => Apartment)
     // declare apartment: Apartment;
-    //
+
     // @BelongsTo(() => Beach)
     // declare beach: Beach;
 }

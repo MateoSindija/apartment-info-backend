@@ -1,12 +1,7 @@
 import { TokenRequest, userAuth } from '@api/middlewares/privateRoute';
 import { LoggerType } from '@loaders/logger';
 import Container from 'typedi';
-import {
-    ImageUrlDTO,
-    NewShopDTO,
-    ParamShopUUID,
-    UpdateShopDTO,
-} from '@interfaces/shop';
+import { NewShopDTO, ParamShopUUID, UpdateShopDTO } from '@interfaces/shop';
 import ShopService from '@services/shop';
 import { Router, Response, NextFunction } from 'express';
 import { z } from 'zod';
@@ -15,6 +10,11 @@ import {
     validateRequestParams,
 } from 'zod-express-middleware';
 import { uploadImages } from '@utils/functions';
+import { ParamApartmentUUID } from '@interfaces/apartment';
+import AttractionsFromOwnerService from '@services/attractionsFromOwner';
+import { Shop } from '@models/shop';
+import { ParamExistingDeviceUUID } from '@interfaces/device';
+import { ShopApartment } from '@models/shopApartment';
 const route = Router();
 
 export default (app: Router) => {
@@ -67,6 +67,33 @@ export default (app: Router) => {
                 );
 
                 res.status(200).json({ shopId });
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.post(
+        '/:attractionId/existing/:apartmentId',
+        userAuth,
+        validateRequestParams(ParamExistingDeviceUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling add existing Shop endpoint endpoint');
+            try {
+                const attractionId = req.params.attractionId;
+                const apartmentId = req.params.apartmentId;
+
+                const attractionFromOwnerServiceInstance = Container.get(
+                    AttractionsFromOwnerService
+                );
+
+                await attractionFromOwnerServiceInstance.AddExistingAttractionToApartment(
+                    ShopApartment,
+                    { shopId: attractionId, apartmentId: apartmentId }
+                );
+
+                res.status(200).end();
             } catch (e) {
                 return next(e);
             }
@@ -183,6 +210,38 @@ export default (app: Router) => {
                 const shop = await shopServiceInstance.GetShopById(shopId);
 
                 res.status(200).json(shop);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.get(
+        '/:apartmentId/list',
+        userAuth,
+        validateRequestParams(ParamApartmentUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get all Shops from owner endpoint');
+
+            try {
+                const userID = req.decoded.id;
+                const apartmentId = req.params.apartmentId;
+
+                const attractionFromOwnerServiceInstance = Container.get(
+                    AttractionsFromOwnerService
+                );
+
+                const shops =
+                    await attractionFromOwnerServiceInstance.GetAttractionsFromOtherApartments(
+                        userID,
+                        apartmentId,
+                        Shop,
+                        'shops',
+                        'shopId'
+                    );
+
+                res.status(200).json(shops);
             } catch (e) {
                 return next(e);
             }

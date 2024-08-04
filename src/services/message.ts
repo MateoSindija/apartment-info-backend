@@ -3,6 +3,7 @@ import { LoggerType } from '@loaders/logger';
 import { Message } from '@models/message';
 import { Op } from 'sequelize';
 import { Reservation } from '@models/reservation';
+import moment from 'moment-timezone';
 
 @Service()
 export default class MessageService {
@@ -38,11 +39,23 @@ export default class MessageService {
 
         const { startDate, endDate } = reservation;
 
+        const startDateUTC = moment
+            .utc(startDate)
+            .add(1, 'day')
+            .startOf('day')
+            .tz('Europe/Berlin')
+            .format('YYYY/MM/DD');
+        const endDateUTC = moment
+            .utc(endDate)
+            .add(1, 'day')
+            .tz('Europe/Berlin')
+            .format('YYYY/MM/DD');
+
         const messages = await Message.findAll({
             where: {
                 [Op.or]: [{ userId: userId }, { apartmentId: userId }],
                 createdAt: {
-                    [Op.between]: [startDate, endDate],
+                    [Op.between]: [startDateUTC, endDateUTC],
                 },
             },
             order: [['createdAt', 'ASC']],
@@ -60,7 +73,7 @@ export default class MessageService {
         messageBody: string
     ): Promise<Message> {
         this.Logger.info('Saving Message');
-
+        console.log(apartmentId + userId + senderId + messageBody);
         const message = await Message.create({
             createdAt: new Date(),
             messageBody: messageBody,
@@ -83,6 +96,7 @@ export default class MessageService {
         if (!reservation) throw new Error('Reservation not found');
 
         const { startDate, endDate } = reservation;
+
         await Message.update(
             { isRead: true },
             {

@@ -21,6 +21,7 @@ import { DeviceApartment } from '@models/deviceApartment';
 import { ShopApartment } from '@models/shopApartment';
 import { SightApartment } from '@models/sightApartment';
 import { RestaurantApartment } from '@models/restaurantApartment';
+import { AboutUs } from '@models/aboutUs';
 
 const connect = async () => {
     try {
@@ -59,6 +60,7 @@ const connect = async () => {
                     deletedAt: 'deletedAt',
                 },
                 models: [
+                    AboutUs,
                     Shop,
                     User,
                     Sight,

@@ -11,6 +11,11 @@ import {
 import { NewSightDTO, ParamSightUUID, UpdateSightDTO } from '@interfaces/sight';
 import SightService from '@services/sights';
 import { uploadImages } from '@utils/functions';
+import { ParamApartmentUUID } from '@interfaces/apartment';
+import AttractionsFromOwnerService from '@services/attractionsFromOwner';
+import { Sight } from '@models/sight';
+import { ParamExistingDeviceUUID } from '@interfaces/device';
+import { SightApartment } from '@models/sightApartment';
 
 const route = Router();
 
@@ -63,6 +68,33 @@ export default (app: Router) => {
                 );
 
                 res.status(200).json({ sightId });
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.post(
+        '/:attractionId/existing/:apartmentId',
+        userAuth,
+        validateRequestParams(ParamExistingDeviceUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling add existing Sight endpoint endpoint');
+            try {
+                const attractionId = req.params.attractionId;
+                const apartmentId = req.params.apartmentId;
+
+                const attractionFromOwnerServiceInstance = Container.get(
+                    AttractionsFromOwnerService
+                );
+
+                await attractionFromOwnerServiceInstance.AddExistingAttractionToApartment(
+                    SightApartment,
+                    { sightId: attractionId, apartmentId: apartmentId }
+                );
+
+                res.status(200).end();
             } catch (e) {
                 return next(e);
             }
@@ -179,6 +211,38 @@ export default (app: Router) => {
                 const sight = await sightServiceInstance.GetSightById(sightId);
 
                 res.status(200).json(sight);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.get(
+        '/:apartmentId/list',
+        userAuth,
+        validateRequestParams(ParamApartmentUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get all Sights from owner endpoint');
+
+            try {
+                const userID = req.decoded.id;
+                const apartmentId = req.params.apartmentId;
+
+                const attractionFromOwnerServiceInstance = Container.get(
+                    AttractionsFromOwnerService
+                );
+
+                const sights =
+                    await attractionFromOwnerServiceInstance.GetAttractionsFromOtherApartments(
+                        userID,
+                        apartmentId,
+                        Sight,
+                        'sights',
+                        'sightId'
+                    );
+
+                res.status(200).json(sights);
             } catch (e) {
                 return next(e);
             }

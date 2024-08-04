@@ -10,6 +10,8 @@ import { Review } from '@models/review';
 import { AboutUs } from '@models/aboutUs';
 import { handleImageUrls, handleTitleImage } from '@utils/functions';
 import { Reservation } from '@models/reservation';
+import { Op } from 'sequelize';
+import moment from 'moment-timezone';
 
 @Service()
 export default class ApartmentService {
@@ -22,9 +24,24 @@ export default class ApartmentService {
 
         return await Reservation.findAll({
             where: { apartmentId: apartmentId },
+            order: [['endDate', 'DESC']],
         });
     }
+    public async GetCurrentReservationForApartment(
+        apartmentId: string
+    ): Promise<Reservation | null> {
+        this.Logger.info('Getting Current Reservation for apartment!');
 
+        const now = moment().tz('Europe/Berlin').startOf('day').toDate();
+
+        return await Reservation.findOne({
+            where: {
+                apartmentId: apartmentId,
+                startDate: { [Op.lte]: now },
+                endDate: { [Op.gte]: now },
+            },
+        });
+    }
     public async GetAllUserApartments(userId: string): Promise<Apartment[]> {
         this.Logger.info('Getting all user apartments!');
 
@@ -202,7 +219,8 @@ export default class ApartmentService {
         lat: number,
         lng: number,
         address: string,
-        userId: string
+        userId: string,
+        apartmentPassword: string
     ): Promise<string> {
         this.Logger.info('Creating new apartment!');
 
@@ -211,10 +229,34 @@ export default class ApartmentService {
             ownerId: userId,
             location: { type: 'Point', coordinates: [lng, lat] },
             address: address,
+            apartmentPassword: apartmentPassword,
         });
 
         this.Logger.info('Created new apartment!');
 
         return apartment.apartmentId;
+    }
+
+    public async UpdateApartment(
+        name: string,
+        lat: number,
+        lng: number,
+        address: string,
+        apartmentId: string,
+        apartmentPassword: string
+    ): Promise<void> {
+        this.Logger.info('Updating apartment!');
+
+        await Apartment.update(
+            {
+                name: name,
+                location: { type: 'Point', coordinates: [lng, lat] },
+                address: address,
+                apartmentPassword: apartmentPassword,
+            },
+            { where: { apartmentId: apartmentId } }
+        );
+
+        this.Logger.info('Updated apartment!');
     }
 }

@@ -15,6 +15,7 @@ import {
     UpdateAboutUsDTO,
 } from '@interfaces/apartment';
 import { uploadImages } from '@utils/functions';
+import ReviewService from '@services/review';
 
 const route = Router();
 
@@ -105,12 +106,38 @@ export default (app: Router): void => {
                 const apartmentServiceInstance =
                     Container.get(ApartmentService);
 
-                const beaches =
+                const reservations =
                     await apartmentServiceInstance.GetReservationByApartment(
                         apartmentId
                     );
 
-                res.status(200).json(beaches);
+                res.status(200).json(reservations);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+    route.get(
+        '/:apartmentId/current-reservation',
+        validateRequestParams(ParamApartmentUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug(
+                'Calling Get current reservation for apartment endpoint'
+            );
+
+            try {
+                const apartmentId = req.params.apartmentId;
+
+                const apartmentServiceInstance =
+                    Container.get(ApartmentService);
+
+                const currentReservation =
+                    await apartmentServiceInstance.GetCurrentReservationForApartment(
+                        apartmentId
+                    );
+
+                res.status(200).json(currentReservation);
             } catch (e) {
                 return next(e);
             }
@@ -164,6 +191,29 @@ export default (app: Router): void => {
             }
         }
     );
+
+    route.get(
+        '/:apartmentId/reviews',
+        validateRequestParams(ParamApartmentUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling get reviews endpoint');
+            try {
+                const reviewServiceInstance = Container.get(ReviewService);
+                const apartmentId = req.params.apartmentId;
+
+                const reviews =
+                    await reviewServiceInstance.GetReviewsByApartmentId(
+                        apartmentId
+                    );
+
+                res.status(200).json(reviews);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
     route.get(
         '/:apartmentId/aboutUs',
         validateRequestParams(ParamApartmentUUID),
@@ -359,7 +409,7 @@ export default (app: Router): void => {
             try {
                 const apartmentServiceInstance =
                     Container.get(ApartmentService);
-                const { name, lat, lng, address } = req.body;
+                const { name, lat, lng, address, apartmentPassword } = req.body;
                 const userId = req.decoded.id;
 
                 const apartmentId =
@@ -368,10 +418,47 @@ export default (app: Router): void => {
                         lat,
                         lng,
                         address,
-                        userId
+                        userId,
+                        apartmentPassword
                     );
 
                 res.status(200).json({ apartmentId });
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.patch(
+        '/:apartmentId',
+        userAuth,
+        validateRequestBody(NewApartmentDTO),
+        validateRequestParams(ParamApartmentUUID),
+        async (
+            req: TokenRequest & {
+                body: z.infer<typeof NewApartmentDTO>;
+            },
+            res: Response,
+            next: NextFunction
+        ) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling update Apartment endpoint');
+            try {
+                const apartmentServiceInstance =
+                    Container.get(ApartmentService);
+                const { name, lat, lng, address, apartmentPassword } = req.body;
+                const apartmentId = req.params.apartmentId;
+
+                await apartmentServiceInstance.UpdateApartment(
+                    name,
+                    lat,
+                    lng,
+                    address,
+                    apartmentId,
+                    apartmentPassword
+                );
+
+                res.status(200).end();
             } catch (e) {
                 return next(e);
             }

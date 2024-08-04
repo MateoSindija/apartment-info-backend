@@ -10,6 +10,11 @@ import {
 import { NewBeachDTO, ParamBeachUUID, UpdateBeachDTO } from '@interfaces/beach';
 import BeachService from '@services/beach';
 import { uploadImages } from '@utils/functions';
+import { Beach } from '@models/beach';
+import AttractionsFromOwnerService from '@services/attractionsFromOwner';
+import { ParamApartmentUUID } from '@interfaces/apartment';
+import { ParamExistingDeviceUUID } from '@interfaces/device';
+import { BeachApartment } from '@models/beachApartment';
 
 const route = Router();
 
@@ -72,6 +77,33 @@ export default (app: Router) => {
     );
 
     route.post(
+        '/:attractionId/existing/:apartmentId',
+        userAuth,
+        validateRequestParams(ParamExistingDeviceUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling add existing Beach endpoint endpoint');
+            try {
+                const attractionId = req.params.attractionId;
+                const apartmentId = req.params.apartmentId;
+
+                const attractionFromOwnerServiceInstance = Container.get(
+                    AttractionsFromOwnerService
+                );
+
+                await attractionFromOwnerServiceInstance.AddExistingAttractionToApartment(
+                    BeachApartment,
+                    { beachId: attractionId, apartmentId: apartmentId }
+                );
+
+                res.status(200).end();
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.post(
         '/:beachId/image',
         userAuth,
         uploadImages('public/uploads/beach').array('images'),
@@ -117,6 +149,38 @@ export default (app: Router) => {
                 const beach = await beachServiceInstance.GetBeachById(beachId);
 
                 res.status(200).json(beach);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.get(
+        '/:apartmentId/list',
+        userAuth,
+        validateRequestParams(ParamApartmentUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get all Beaches from owner endpoint');
+
+            try {
+                const userID = req.decoded.id;
+                const apartmentId = req.params.apartmentId;
+
+                const attractionFromOwnerServiceInstance = Container.get(
+                    AttractionsFromOwnerService
+                );
+
+                const beaches =
+                    await attractionFromOwnerServiceInstance.GetAttractionsFromOtherApartments(
+                        userID,
+                        apartmentId,
+                        Beach,
+                        'beaches',
+                        'beachId'
+                    );
+
+                res.status(200).json(beaches);
             } catch (e) {
                 return next(e);
             }

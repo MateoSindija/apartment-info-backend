@@ -4,6 +4,7 @@ import { Apartment } from '@models/apartment';
 import { Review } from '@models/review';
 import { Reservation } from '@models/reservation';
 import { Op } from 'sequelize';
+import moment from 'moment-timezone';
 
 @Service()
 export default class ReviewService {
@@ -21,7 +22,7 @@ export default class ReviewService {
         const apartment = await Apartment.findByPk(apartmentId);
         if (!apartment) throw new Error('Failed to find apartment!');
 
-        const now = new Date();
+        const now = moment().tz('Europe/Berlin').startOf('day').toDate();
 
         const reservation = await Reservation.findOne({
             where: {
@@ -78,10 +79,8 @@ export default class ReviewService {
             apartmentId
         );
 
-        // Get the current date and time
-        const now = new Date();
+        const now = moment().tz('Europe/Berlin').startOf('day').toDate();
 
-        // Find the current active reservation for the given apartment
         const currentReservation = await Reservation.findOne({
             where: {
                 apartmentId: apartmentId,

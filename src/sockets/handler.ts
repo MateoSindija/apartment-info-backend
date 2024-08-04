@@ -64,6 +64,7 @@ const SocketHandler = {
                     Logger.info(
                         `User joined ${socket.id} joined room ${reservationId}`
                     );
+
                     const messageServiceInstance =
                         Container.get(MessageService);
 

@@ -30,6 +30,13 @@ export const LoginDTO = z
     })
     .required();
 
+export const LoginApartmentDTO = z
+    .object({
+        apartmentId: z.string().uuid(),
+        password: z.string().min(8).max(50),
+    })
+    .required();
+
 export const InitPasswordResetDTO = z
     .object({
         email: z

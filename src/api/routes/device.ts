@@ -10,10 +10,15 @@ import {
 import {
     NewDeviceDTO,
     ParamDeviceUUID,
+    ParamExistingDeviceUUID,
     UpdateDeviceDTO,
 } from '@interfaces/device';
 import DeviceService from '@services/device';
 import { uploadImages } from '@utils/functions';
+import { ParamApartmentUUID } from '@interfaces/apartment';
+import AttractionsFromOwnerService from '@services/attractionsFromOwner';
+import { Device } from '@models/device';
+import { DeviceApartment } from '@models/deviceApartment';
 
 const route = Router();
 
@@ -70,6 +75,33 @@ export default (app: Router) => {
     );
 
     route.post(
+        '/:attractionId/existing/:apartmentId',
+        userAuth,
+        validateRequestParams(ParamExistingDeviceUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling add existing Device endpoint endpoint');
+            try {
+                const attractionId = req.params.attractionId;
+                const apartmentId = req.params.apartmentId;
+
+                const attractionFromOwnerServiceInstance = Container.get(
+                    AttractionsFromOwnerService
+                );
+
+                await attractionFromOwnerServiceInstance.AddExistingAttractionToApartment(
+                    DeviceApartment,
+                    { deviceId: attractionId, apartmentId: apartmentId }
+                );
+
+                res.status(200).end();
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.post(
         '/:deviceId/image',
         userAuth,
         uploadImages('public/uploads/device').array('images'),
@@ -116,6 +148,38 @@ export default (app: Router) => {
                     await deviceServiceInstance.GetDeviceById(deviceId);
 
                 res.status(200).json(device);
+            } catch (e) {
+                return next(e);
+            }
+        }
+    );
+
+    route.get(
+        '/:apartmentId/list',
+        userAuth,
+        validateRequestParams(ParamApartmentUUID),
+        async (req: TokenRequest, res: Response, next: NextFunction) => {
+            const Logger: LoggerType = Container.get('logger');
+            Logger.debug('Calling Get all Devices from owner endpoint');
+
+            try {
+                const userID = req.decoded.id;
+                const apartmentId = req.params.apartmentId;
+
+                const attractionFromOwnerServiceInstance = Container.get(
+                    AttractionsFromOwnerService
+                );
+
+                const devices =
+                    await attractionFromOwnerServiceInstance.GetAttractionsFromOtherApartments(
+                        userID,
+                        apartmentId,
+                        Device,
+                        'devices',
+                        'deviceId'
+                    );
+
+                res.status(200).json(devices);
             } catch (e) {
                 return next(e);
             }

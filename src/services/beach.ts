@@ -26,6 +26,7 @@ export default class BeachService {
         this.Logger.info('Found Beach!');
         return beach;
     }
+
     public async UpdateImage(
         beachId: string,
         userId: string,

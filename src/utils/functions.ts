@@ -1,8 +1,15 @@
 import multer from 'multer';
 import ShortUniqueId from 'short-unique-id';
 import fs from 'fs';
-import Container, { Inject } from 'typedi';
-import { LoggerType } from '@loaders/logger';
+import Logger, { LoggerType } from '@loaders/logger';
+import { Apartment } from '@models/apartment';
+import { Includeable, Op } from 'sequelize';
+import { ModelType } from 'sequelize-typescript';
+import Container from 'typedi';
+import { Beach } from '@models/beach';
+import { Device } from '@models/device';
+import { Shop } from '@models/shop';
+import { Sight } from '@models/sight';
 
 const uid = new ShortUniqueId({ length: 11 });
 
