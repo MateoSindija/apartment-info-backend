@@ -143,6 +143,7 @@ export default (app: Router): void => {
             }
         }
     );
+
     route.get(
         '/:apartmentId/sights',
         validateRequestParams(ParamApartmentUUID),
@@ -186,28 +187,6 @@ export default (app: Router): void => {
                     );
 
                 res.status(200).json(devices);
-            } catch (e) {
-                return next(e);
-            }
-        }
-    );
-
-    route.get(
-        '/:apartmentId/reviews',
-        validateRequestParams(ParamApartmentUUID),
-        async (req: TokenRequest, res: Response, next: NextFunction) => {
-            const Logger: LoggerType = Container.get('logger');
-            Logger.debug('Calling get reviews endpoint');
-            try {
-                const reviewServiceInstance = Container.get(ReviewService);
-                const apartmentId = req.params.apartmentId;
-
-                const reviews =
-                    await reviewServiceInstance.GetReviewsByApartmentId(
-                        apartmentId
-                    );
-
-                res.status(200).json(reviews);
             } catch (e) {
                 return next(e);
             }
@@ -386,7 +365,7 @@ export default (app: Router): void => {
                         apartmentId
                     );
 
-                res.status(200).json(reviews);
+                res.status(200).json({ ...reviews });
             } catch (e) {
                 return next(e);
             }

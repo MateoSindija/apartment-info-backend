@@ -2,7 +2,6 @@ import { Inject, Service } from 'typedi';
 import { LoggerType } from '@loaders/logger';
 import { ForbiddenError } from '@errors/appError';
 import { Apartment } from '@models/apartment';
-import fs from 'fs';
 import { Restaurant } from '@models/restaurant';
 import { RestaurantApartment } from '@models/restaurantApartment';
 import {
@@ -18,7 +17,9 @@ export default class RestaurantService {
     public async GetRestaurantById(restaurantId: string): Promise<Restaurant> {
         this.Logger.info('Getting restaurant!');
 
-        const restaurant = await Restaurant.findByPk(restaurantId);
+        const restaurant = await Restaurant.findByPk(restaurantId, {
+            include: Apartment,
+        });
 
         if (!restaurant) {
             throw new Error('Restaurant not found');

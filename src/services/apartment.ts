@@ -151,17 +151,97 @@ export default class ApartmentService {
         this.Logger.info('Found all restaurants!');
         return restaurants;
     }
-    public async GetAllReviewsForApartment(
-        apartmentId: string
-    ): Promise<Review[]> {
+    public async GetAllReviewsForApartment(apartmentId: string): Promise<{
+        reviews: Review[];
+        avgComfort: number;
+        avgOverall: number;
+        avgValue: number;
+        avgRating: number;
+        ratingChangePercentage: number;
+        totalReservationsCount: number;
+    }> {
         this.Logger.info('Getting all reviews for apartment!');
 
+        const now = moment().tz('Europe/Berlin').startOf('day').toDate();
+        const oneYearAgo = moment()
+            .tz('Europe/Berlin')
+            .subtract(1, 'year')
+            .startOf('day')
+            .toDate();
+
         const reviews = await Review.findAll({
-            where: { apartmentId: apartmentId },
+            where: {
+                apartmentId: apartmentId,
+            },
+            include: [
+                {
+                    model: Reservation,
+                    required: true,
+                },
+            ],
+            order: [['createdAt', 'DESC']],
         });
 
+        const reservations = await Reservation.findAll({
+            where: {
+                apartmentId: apartmentId,
+                startDate: { [Op.lte]: now },
+            },
+        });
+
+        const lastYearReviews = await Review.findAll({
+            where: {
+                apartmentId: apartmentId,
+                createdAt: {
+                    [Op.lt]: oneYearAgo,
+                    [Op.gte]: moment(oneYearAgo).subtract(1, 'year').toDate(),
+                },
+            },
+        });
+
+        const avgComfort =
+            reviews.reduce((acc, review) => acc + review.comfortRating, 0) /
+            reviews.length;
+
+        const avgValue =
+            reviews.reduce((acc, review) => acc + review.valueRating, 0) /
+            reviews.length;
+
+        const avgOverallExp =
+            reviews.reduce((acc, review) => acc + review.experienceRating, 0) /
+            reviews.length;
+
+        const avgRating = (avgComfort + avgValue + avgOverallExp) / 3;
+
+        const avgRatingLastYear = lastYearReviews.length
+            ? lastYearReviews.reduce(
+                  (acc, review) =>
+                      acc +
+                      (review.comfortRating +
+                          review.valueRating +
+                          review.experienceRating) /
+                          3,
+                  0
+              ) / lastYearReviews.length
+            : undefined;
+
+        let ratingChangePercentage = 0;
+        if (avgRatingLastYear !== undefined) {
+            ratingChangePercentage =
+                ((avgRating - avgRatingLastYear) / avgRatingLastYear) * 100;
+        }
+
+        const reviewData = {
+            reviews: reviews,
+            avgComfort: avgComfort,
+            avgOverall: avgOverallExp,
+            avgValue: avgValue,
+            avgRating: avgRating,
+            ratingChangePercentage: ratingChangePercentage,
+            totalReservationsCount: reservations.length,
+        };
         this.Logger.info('Found all reviews!');
-        return reviews;
+        return reviewData;
     }
 
     public async GetAboutUs(apartmentId: string): Promise<AboutUs | null> {

@@ -45,7 +45,7 @@ export default (app: Router) => {
                 const {
                     title,
                     description,
-                    imagesUrl,
+
                     apartmentId,
                     titleImage,
                 } = req.body;
@@ -61,7 +61,7 @@ export default (app: Router) => {
                 const deviceId = await deviceServiceInstance.CreateDevice(
                     title,
                     description,
-                    imagesUrl,
+                    imagesPath,
                     apartmentId,
                     imagesPath[titleImage],
                     userID

@@ -18,7 +18,7 @@ export default class SightService {
     public async GetSightById(sightId: string): Promise<Sight> {
         this.Logger.info('Getting all sights!');
 
-        const sight = await Sight.findByPk(sightId);
+        const sight = await Sight.findByPk(sightId, { include: Apartment });
 
         if (!sight) {
             throw new Error('Sight not found');

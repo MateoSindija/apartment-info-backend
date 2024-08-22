@@ -33,8 +33,13 @@ export default class AttractionsFromOwnerService {
             return [];
         }
 
-        const currentAttractions = currentApartment[alias].map(
-            (attraction) => attraction[idField]
+        const currentAttractionsList = currentApartment[alias] || [];
+
+        const currentAttractionIds = new Set<string | number>(
+            currentAttractionsList.map(
+                (attraction: Beach | Apartment | Device | Shop | Sight) =>
+                    attraction[idField]
+            )
         );
 
         const otherApartments = await Apartment.findAll({
@@ -45,13 +50,25 @@ export default class AttractionsFromOwnerService {
             include: model,
         });
 
-        return otherApartments
-            .map((apartment) => apartment[alias])
-            .flat()
-            .filter(
-                (attraction) =>
-                    !currentAttractions.includes(attraction[idField])
-            );
+        const uniqueAttractionIds = new Set<string | number>();
+        const result: Beach[] | Apartment[] | Device[] | Shop[] | Sight[] = [];
+
+        for (const apartment of otherApartments) {
+            const attractionsList = apartment[alias] || [];
+            for (const attraction of attractionsList) {
+                const attractionId = attraction[idField];
+                if (
+                    attractionId &&
+                    !currentAttractionIds.has(attractionId) &&
+                    !uniqueAttractionIds.has(attractionId)
+                ) {
+                    uniqueAttractionIds.add(attractionId);
+                    result.push(attraction);
+                }
+            }
+        }
+
+        return result;
     }
     public async AddExistingAttractionToApartment(
         model: ModelCtor<Model>,

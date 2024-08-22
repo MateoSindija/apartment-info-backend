@@ -16,7 +16,7 @@ export default class ShopService {
     public async GetShopById(shopId: string): Promise<Shop> {
         this.Logger.info('Getting all shops!');
 
-        const shop = await Shop.findByPk(shopId);
+        const shop = await Shop.findByPk(shopId, { include: Apartment });
 
         if (!shop) {
             throw new Error('Shop not found');

@@ -17,7 +17,7 @@ export default class DeviceService {
     public async GetDeviceById(sightId: string): Promise<Device> {
         this.Logger.info('Getting Beach!');
 
-        const device = await Device.findByPk(sightId);
+        const device = await Device.findByPk(sightId, { include: Apartment });
 
         if (!device) {
             throw new Error('Device not found');

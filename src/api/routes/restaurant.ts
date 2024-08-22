@@ -17,10 +17,8 @@ import RestaurantService from '@services/restaurant';
 import { uploadImages } from '@utils/functions';
 import { ParamApartmentUUID } from '@interfaces/apartment';
 import AttractionsFromOwnerService from '@services/attractionsFromOwner';
-import { Beach } from '@models/beach';
 import { Restaurant } from '@models/restaurant';
 import { ParamExistingDeviceUUID } from '@interfaces/device';
-import { BeachApartment } from '@models/beachApartment';
 import { RestaurantApartment } from '@models/restaurantApartment';
 const route = Router();
 

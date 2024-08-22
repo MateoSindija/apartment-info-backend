@@ -17,7 +17,9 @@ export default class BeachService {
     public async GetBeachById(beachId: string): Promise<Beach> {
         this.Logger.info('Getting beach!');
 
-        const beach = await Beach.findByPk(beachId);
+        const beach = await Beach.findByPk(beachId, {
+            include: Apartment,
+        });
 
         if (!beach) {
             throw new Error('Beach not found');
