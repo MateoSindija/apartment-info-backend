@@ -120,6 +120,8 @@ export default class RestaurantService {
             await deleteImage(imageUrl);
         }
 
+        console.log(description);
+
         await Restaurant.update(
             {
                 title: title,
