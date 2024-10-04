@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { validateRequestBody } from 'zod-express-middleware';
 import { NewReviewDTO } from '@interfaces/review';
 import ReviewService from '@services/review';
+import { uploadImages } from '@utils/functions';
+import * as console from 'node:console';
 
 const route = Router();
 
@@ -14,6 +16,7 @@ export default (app: Router) => {
 
     route.post(
         '/new',
+        uploadImages('public/uploads/review').array('images'),
         validateRequestBody(NewReviewDTO),
         async (
             req: TokenRequest & {
@@ -25,6 +28,10 @@ export default (app: Router) => {
             const Logger: LoggerType = Container.get('logger');
             Logger.debug('Calling New Review endpoint');
             try {
+                const imagesPath: string[] = (
+                    req.files as Express.Multer.File[]
+                ).map((file: Express.Multer.File) => file.path);
+
                 const reviewServiceInstance = Container.get(ReviewService);
                 const {
                     comfortRating,
@@ -39,7 +46,8 @@ export default (app: Router) => {
                     experienceRating,
                     valueRating,
                     review,
-                    apartmentId
+                    apartmentId,
+                    imagesPath
                 );
 
                 res.status(200).json(newReview);

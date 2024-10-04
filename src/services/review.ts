@@ -15,7 +15,8 @@ export default class ReviewService {
         experienceRating: number,
         valueRating: number,
         reviewText: string | undefined,
-        apartmentId: string
+        apartmentId: string,
+        imagesPath: string[] | undefined
     ): Promise<Review> {
         this.Logger.info('Creating new Review!');
 
@@ -40,6 +41,7 @@ export default class ReviewService {
             review: reviewText,
             apartmentId: apartmentId,
             reservationId: reservation.reservationId,
+            ...(imagesPath && { imagesUrl: imagesPath }),
         });
 
         this.Logger.info('Created new Review!');

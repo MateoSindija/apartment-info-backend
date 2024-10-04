@@ -32,6 +32,9 @@ export class Review extends Model {
     @Column(DataType.STRING)
     declare review: string | null;
 
+    @Column(DataType.ARRAY(DataType.STRING))
+    declare imagesUrl: string[] | null;
+
     @Column(DataType.UUID)
     @ForeignKey(() => Apartment)
     declare apartmentId: string;

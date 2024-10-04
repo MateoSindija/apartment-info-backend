@@ -10,7 +10,7 @@
         "NODE_ENV": "production"
       },
       "watch_options": {
-        "usePolling": true,
+        "usePolling": true
       },
       "env_development": {
         "NODE_ENV": "development"

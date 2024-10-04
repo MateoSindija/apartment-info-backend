@@ -1,21 +1,22 @@
-import { Inject, Service } from 'typedi';
-import { LoggerType } from '@loaders/logger';
-import { Apartment } from '@models/apartment';
-import { Beach } from '@models/beach';
-import { Sight } from '@models/sight';
-import { Device } from '@models/device';
-import { Restaurant } from '@models/restaurant';
-import { Shop } from '@models/shop';
-import { Review } from '@models/review';
-import { AboutUs } from '@models/aboutUs';
-import { handleImageUrls, handleTitleImage } from '@utils/functions';
-import { Reservation } from '@models/reservation';
-import { Op } from 'sequelize';
+import {Inject, Service} from 'typedi';
+import {LoggerType} from '@loaders/logger';
+import {Apartment} from '@models/apartment';
+import {Beach} from '@models/beach';
+import {Sight} from '@models/sight';
+import {Device} from '@models/device';
+import {Restaurant} from '@models/restaurant';
+import {Shop} from '@models/shop';
+import {Review} from '@models/review';
+import {AboutUs} from '@models/aboutUs';
+import {handleImageUrls, handleTitleImage} from '@utils/functions';
+import {Reservation} from '@models/reservation';
+import {Op} from 'sequelize';
 import moment from 'moment-timezone';
 
 @Service()
 export default class ApartmentService {
-    constructor(@Inject('logger') private Logger: LoggerType) {}
+    constructor(@Inject('logger') private Logger: LoggerType) {
+    }
 
     public async GetReservationByApartment(
         apartmentId: string
@@ -23,10 +24,11 @@ export default class ApartmentService {
         this.Logger.info('Getting Reservation periods for apartment!');
 
         return await Reservation.findAll({
-            where: { apartmentId: apartmentId },
+            where: {apartmentId: apartmentId},
             order: [['endDate', 'DESC']],
         });
     }
+
     public async GetCurrentReservationForApartment(
         apartmentId: string
     ): Promise<Reservation | null> {
@@ -37,21 +39,23 @@ export default class ApartmentService {
         return await Reservation.findOne({
             where: {
                 apartmentId: apartmentId,
-                startDate: { [Op.lte]: now },
-                endDate: { [Op.gte]: now },
+                startDate: {[Op.lte]: now},
+                endDate: {[Op.gte]: now},
             },
         });
     }
+
     public async GetAllUserApartments(userId: string): Promise<Apartment[]> {
         this.Logger.info('Getting all user apartments!');
 
         const apartments = await Apartment.findAll({
-            where: { ownerId: userId },
+            where: {ownerId: userId},
         });
 
         this.Logger.info('Found all apartments!');
         return apartments;
     }
+
     public async GetApartmentInfo(apartmentId: string): Promise<Apartment> {
         this.Logger.info('Getting apartment info!');
 
@@ -62,6 +66,7 @@ export default class ApartmentService {
         this.Logger.info('Found apartment!');
         return apartment;
     }
+
     public async GetAllSightsInApartment(
         apartmentId: string
     ): Promise<Sight[]> {
@@ -71,7 +76,7 @@ export default class ApartmentService {
             include: [
                 {
                     model: Apartment,
-                    where: { apartmentId },
+                    where: {apartmentId},
                     attributes: [],
                 },
             ],
@@ -84,21 +89,22 @@ export default class ApartmentService {
     public async GetAllBeachesInApartment(
         apartmentId: string
     ): Promise<Beach[]> {
-        this.Logger.info('Getting all beaches in apartment!');
+        this.Logger.info('Getting all beach in apartment!');
 
         const beaches = await Beach.findAll({
             include: [
                 {
                     model: Apartment,
-                    where: { apartmentId },
+                    where: {apartmentId},
                     attributes: [],
                 },
             ],
         });
 
-        this.Logger.info('Found all beaches!');
+        this.Logger.info('Found all beach!');
         return beaches;
     }
+
     public async GetAllShopsInApartment(apartmentId: string): Promise<Shop[]> {
         this.Logger.info('Getting all shops in apartment!');
 
@@ -106,7 +112,7 @@ export default class ApartmentService {
             include: [
                 {
                     model: Apartment,
-                    where: { apartmentId },
+                    where: {apartmentId},
                     attributes: [],
                 },
             ],
@@ -115,6 +121,7 @@ export default class ApartmentService {
         this.Logger.info('Found all shops!');
         return shops;
     }
+
     public async GetAllDevicesInApartment(
         apartmentId: string
     ): Promise<Device[]> {
@@ -124,7 +131,7 @@ export default class ApartmentService {
             include: [
                 {
                     model: Apartment,
-                    where: { apartmentId },
+                    where: {apartmentId},
                     attributes: [],
                 },
             ],
@@ -133,6 +140,7 @@ export default class ApartmentService {
         this.Logger.info('Found all devices!');
         return devices;
     }
+
     public async GetAllRestaurantsInApartment(
         apartmentId: string
     ): Promise<Restaurant[]> {
@@ -142,7 +150,7 @@ export default class ApartmentService {
             include: [
                 {
                     model: Apartment,
-                    where: { apartmentId },
+                    where: {apartmentId},
                     attributes: [],
                 },
             ],
@@ -151,6 +159,7 @@ export default class ApartmentService {
         this.Logger.info('Found all restaurants!');
         return restaurants;
     }
+
     public async GetAllReviewsForApartment(apartmentId: string): Promise<{
         reviews: Review[];
         avgComfort: number;
@@ -165,7 +174,7 @@ export default class ApartmentService {
         const now = moment().tz('Europe/Berlin').startOf('day').toDate();
         const oneYearAgo = moment()
             .tz('Europe/Berlin')
-            .subtract(1, 'year')
+            .subtract(8, 'months')
             .startOf('day')
             .toDate();
 
@@ -185,7 +194,7 @@ export default class ApartmentService {
         const reservations = await Reservation.findAll({
             where: {
                 apartmentId: apartmentId,
-                startDate: { [Op.lte]: now },
+                startDate: {[Op.lte]: now},
             },
         });
 
@@ -194,7 +203,7 @@ export default class ApartmentService {
                 apartmentId: apartmentId,
                 createdAt: {
                     [Op.lt]: oneYearAgo,
-                    [Op.gte]: moment(oneYearAgo).subtract(1, 'year').toDate(),
+                    [Op.gte]: moment(oneYearAgo).subtract(8, 'months').toDate(),
                 },
             },
         });
@@ -211,22 +220,22 @@ export default class ApartmentService {
             reviews.reduce((acc, review) => acc + review.experienceRating, 0) /
             reviews.length;
 
-        const avgRating = (avgComfort + avgValue + avgOverallExp) / 3;
-
         const avgRatingLastYear = lastYearReviews.length
             ? lastYearReviews.reduce(
-                  (acc, review) =>
-                      acc +
-                      (review.comfortRating +
-                          review.valueRating +
-                          review.experienceRating) /
-                          3,
-                  0
-              ) / lastYearReviews.length
+            (acc, review) =>
+                acc +
+                ((review.comfortRating || 0) +
+                    (review.valueRating || 0) +
+                    (review.experienceRating || 0)) /
+                3,
+            0
+        ) / lastYearReviews.length
             : undefined;
 
+        const avgRating = (avgComfort + avgValue + avgOverallExp) / 3;
+
         let ratingChangePercentage = 0;
-        if (avgRatingLastYear !== undefined) {
+        if (avgRatingLastYear !== undefined && avgRatingLastYear > 0) {
             ratingChangePercentage =
                 ((avgRating - avgRatingLastYear) / avgRatingLastYear) * 100;
         }
@@ -272,6 +281,7 @@ export default class ApartmentService {
 
         this.Logger.info('Created about us!');
     }
+
     public async UpdateAboutUs(
         apartmentId: string,
         moto: string,
@@ -289,11 +299,12 @@ export default class ApartmentService {
                 imagesUrl: handleImageUrls(imagesPath, imagesUrlArray),
                 titleImage: handleTitleImage(titleImage, imagesPath),
             },
-            { where: { apartmentId: apartmentId } }
+            {where: {apartmentId: apartmentId}}
         );
 
         this.Logger.info('Updated about us!');
     }
+
     public async CreateApartment(
         name: string,
         lat: number,
@@ -307,7 +318,7 @@ export default class ApartmentService {
         const apartment = await Apartment.create({
             name: name,
             ownerId: userId,
-            location: { type: 'Point', coordinates: [lng, lat] },
+            location: {type: 'Point', coordinates: [lng, lat]},
             address: address,
             apartmentPassword: apartmentPassword,
         });
@@ -330,11 +341,11 @@ export default class ApartmentService {
         await Apartment.update(
             {
                 name: name,
-                location: { type: 'Point', coordinates: [lng, lat] },
+                location: {type: 'Point', coordinates: [lng, lat]},
                 address: address,
                 apartmentPassword: apartmentPassword,
             },
-            { where: { apartmentId: apartmentId } }
+            {where: {apartmentId: apartmentId}}
         );
 
         this.Logger.info('Updated apartment!');
