@@ -52,6 +52,7 @@ export default (app: Router) => {
 
                 res.status(200).json(newReview);
             } catch (e) {
+                console.log(e);
                 return next(e);
             }
         }

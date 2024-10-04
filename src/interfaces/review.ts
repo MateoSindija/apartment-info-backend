@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 export const NewReviewDTO = z.object({
     comfortRating: z.coerce.number().min(1).max(5),
     experienceRating: z.coerce.number().min(1).max(5),
