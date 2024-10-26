@@ -1,8 +1,8 @@
-import {TokenRequest, userAuth} from '@api/middlewares/privateRoute';
-import {LoggerType} from '@loaders/logger';
+import { TokenRequest, userAuth } from '@api/middlewares/privateRoute';
+import { LoggerType } from '@loaders/logger';
 import Container from 'typedi';
-import {Router, Response, NextFunction} from 'express';
-import {z} from 'zod';
+import { Router, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import {
     validateRequestBody,
     validateRequestParams,
@@ -14,9 +14,9 @@ import {
     ParamApartmentUUID,
     UpdateAboutUsDTO,
 } from '@interfaces/apartment';
-import {uploadImages} from '@utils/functions';
+import { uploadImages } from '@utils/functions';
 import ReviewService from '@services/review';
-import * as console from "node:console";
+import * as console from 'node:console';
 
 const route = Router();
 
@@ -39,7 +39,7 @@ export default (app: Router): void => {
                 const apartments =
                     await apartmentServiceInstance.GetAllUserApartments(userId);
 
-                res.status(200).json({apartments});
+                res.status(200).json({ apartments });
             } catch (e) {
                 return next(e);
             }
@@ -226,7 +226,7 @@ export default (app: Router): void => {
             Logger.debug('Calling add about us for apartment endpoint');
 
             try {
-                const {moto, aboutUs, titleImage, apartmentId} = req.body;
+                const { moto, aboutUs, titleImage, apartmentId } = req.body;
 
                 const imagesPath: string[] = (
                     req.files as Express.Multer.File[]
@@ -247,7 +247,7 @@ export default (app: Router): void => {
                     imagesPath[titleImage]
                 );
 
-                res.status(200);
+                res.status(200).end();
             } catch (e) {
                 return next(e);
             }
@@ -265,7 +265,7 @@ export default (app: Router): void => {
 
             try {
                 const apartmentId = req.params.apartmentId;
-                const {moto, aboutUs, titleImage, imagesUrlArray} = req.body;
+                const { moto, aboutUs, titleImage, imagesUrlArray } = req.body;
                 let imagesPath: string[] | undefined = [];
 
                 if (req.files) {
@@ -293,7 +293,7 @@ export default (app: Router): void => {
                     imagesUrlArray
                 );
 
-                res.status(200);
+                res.status(200).end();
             } catch (e) {
                 return next(e);
             }
@@ -366,7 +366,7 @@ export default (app: Router): void => {
                         apartmentId
                     );
 
-                res.status(200).json({...reviews});
+                res.status(200).json({ ...reviews });
             } catch (e) {
                 return next(e);
             }
@@ -389,7 +389,7 @@ export default (app: Router): void => {
             try {
                 const apartmentServiceInstance =
                     Container.get(ApartmentService);
-                const {name, lat, lng, address, apartmentPassword} = req.body;
+                const { name, lat, lng, address, apartmentPassword } = req.body;
                 const userId = req.decoded.id;
 
                 const apartmentId =
@@ -402,7 +402,7 @@ export default (app: Router): void => {
                         apartmentPassword
                     );
 
-                res.status(200).json({apartmentId});
+                res.status(200).json({ apartmentId });
             } catch (e) {
                 return next(e);
             }
@@ -426,7 +426,7 @@ export default (app: Router): void => {
             try {
                 const apartmentServiceInstance =
                     Container.get(ApartmentService);
-                const {name, lat, lng, address, apartmentPassword} = req.body;
+                const { name, lat, lng, address, apartmentPassword } = req.body;
                 const apartmentId = req.params.apartmentId;
 
                 await apartmentServiceInstance.UpdateApartment(
