@@ -20,6 +20,7 @@ import AttractionsFromOwnerService from '@services/attractionsFromOwner';
 import { Restaurant } from '@models/restaurant';
 import { ParamExistingDeviceUUID } from '@interfaces/device';
 import { RestaurantApartment } from '@models/restaurantApartment';
+
 const route = Router();
 
 export default (app: Router) => {
@@ -280,7 +281,7 @@ export default (app: Router) => {
     route.delete(
         '/:apartmentId/:restaurantId',
         userAuth,
-        validateRequestQuery(ParamRestaurantUUID),
+        validateRequestParams(ParamRestaurantUUID),
         async (req: TokenRequest, res: Response, next: NextFunction) => {
             const Logger: LoggerType = Container.get('logger');
             Logger.debug('Calling Delete Restaurant endpoint');
